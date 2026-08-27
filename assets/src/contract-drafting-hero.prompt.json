@@ -1,0 +1,8 @@
+{
+  "generator": "Azure AI Foundry factory-image via /opt/fleet/lib/gen-image.sh",
+  "date": "2026-08-27",
+  "size": "1536x1024",
+  "quality": "high",
+  "use_case": "stylized-concept",
+  "prompt": "An axonometric architect's drafting table made from warm vellum, with untidy spreadsheet-like paper strips entering a transparent cyan measuring and alignment jig, and one precise contract sheet exiting with abstract check marks and registration marks only. Warm ivory paper fibers, deep blueprint navy technical ink, translucent cyan acrylic, brushed steel ruler, tiny vermilion revision tabs. Wide 3:2 landscape, main mechanism centered-right, generous quiet paper space, crisp edges, sophisticated editorial technical illustration, soft overcast studio light. No readable words, letters, numbers, people, hands, logos, watermark, brands, glossy corporate 3D, neon gradients, pseudo-text, or excessive clutter."
+}
