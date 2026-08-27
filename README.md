@@ -45,7 +45,7 @@ chromium` once.
 
 ## Contract behavior
 
-- Dates written as `DD/MM/YYYY` or `DD-MM-YYYY` normalize to ISO `YYYY-MM-DD`.
+- Dates written as `DD/MM/YYYY` or `DD-MM-YYYY` normalize to ISO `YYYY-MM-DD` only when they are real calendar dates; impossible dates and non-leap-year 29 February values remain validation errors with their original source evidence.
 - Number coercion removes thousands separators only when deterministic.
 - Boolean coercion recognizes true/false, yes/no, y/n, and 1/0.
 - Coercive number/date/boolean transforms are flagged in the contract and report.

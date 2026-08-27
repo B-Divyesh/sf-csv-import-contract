@@ -117,9 +117,9 @@ function emptyState(): string {
         <p class="error-message" id="file-error" role="alert"></p>
       </div>
       <picture class="hero-art">
-        <source srcset="/assets/contract-drafting-hero-768.avif 768w, /assets/contract-drafting-hero.avif 1280w" sizes="(max-width: 900px) 100vw, 55vw" type="image/avif">
-        <source srcset="/assets/contract-drafting-hero-768.webp 768w, /assets/contract-drafting-hero.webp 1280w" sizes="(max-width: 900px) 100vw, 55vw" type="image/webp">
-        <img src="/assets/contract-drafting-hero.jpg" width="1280" height="853" fetchpriority="high" alt="Technical illustration of messy data strips passing through a measuring jig and becoming a precise contract sheet.">
+        <source srcset="/assets/contract-drafting-hero-768.c0b8c435.avif 768w, /assets/contract-drafting-hero.074f6cf3.avif 1280w" sizes="(max-width: 900px) 100vw, 55vw" type="image/avif">
+        <source srcset="/assets/contract-drafting-hero-768.454a62e7.webp 768w, /assets/contract-drafting-hero.b638ae3d.webp 1280w" sizes="(max-width: 900px) 100vw, 55vw" type="image/webp">
+        <img src="/assets/contract-drafting-hero.f693a142.jpg" width="1280" height="853" fetchpriority="high" alt="Technical illustration of messy data strips passing through a measuring jig and becoming a precise contract sheet.">
       </picture>
       <div class="trust-line"><span>01 / Read locally</span><span>02 / Make rules explicit</span><span>03 / Hand off evidence</span></div>
     </section>`;

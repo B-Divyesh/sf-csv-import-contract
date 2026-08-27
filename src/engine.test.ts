@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cleanAndValidate, createRules, makeContract, parseCSV, toCSV, transformValue } from "./engine";
+import { cleanAndValidate, createRules, isValidISODate, makeContract, parseCSV, toCSV, transformValue } from "./engine";
 
 describe("CSV contract engine", () => {
   it("detects syntax, quoted fields, and duplicate headings", () => {
@@ -21,8 +21,24 @@ describe("CSV contract engine", () => {
 
   it("normalizes known values without guessing invalid values", () => {
     expect(transformValue(" 01/02/2025 ", "date")).toBe("2025-02-01");
+    expect(transformValue("31/02/2025", "date")).toBe("31/02/2025");
     expect(transformValue("yes", "boolean")).toBe("true");
     expect(transformValue("maybe", "boolean")).toBe("maybe");
+  });
+
+  it("rejects impossible calendar dates while retaining source evidence", () => {
+    const source = parseCSV("Join date\n31/02/2025\n2025-02-29\n2024-02-29");
+    const rules = createRules(source);
+    rules[0] = { ...rules[0]!, type: "date", transform: "date" };
+    const result = cleanAndValidate(source, rules);
+
+    expect(isValidISODate("2025-02-29")).toBe(false);
+    expect(isValidISODate("2024-02-29")).toBe(true);
+    expect(result.rows).toEqual([["31/02/2025"], ["2025-02-29"], ["2024-02-29"]]);
+    expect(result.issues.map((issue) => [issue.row, issue.originalValue, issue.code])).toEqual([
+      [2, "31/02/2025", "type"],
+      [3, "2025-02-29", "type"]
+    ]);
   });
 
   it("exports safe CSV and a versioned contract", () => {

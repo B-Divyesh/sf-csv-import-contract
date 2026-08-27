@@ -34,3 +34,31 @@ test("legal pages expose one heading and a main landmark", async ({ page }) => {
     await expect(page.locator("h1")).toHaveCount(1);
   }
 });
+
+test("flags impossible calendar dates and blocks approval with source evidence", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#source-file").setInputFiles({
+    name: "calendar-regression.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from("Join date\n31/02/2025\n2025-02-29\n2024-02-29")
+  });
+  await expect(page.getByText("calendar-regression.csv", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /Continue to map/ }).click();
+  await page.getByRole("button", { name: /Continue to validate/ }).click();
+  await expect(page.locator(".issue-count strong")).toHaveText("2");
+  await expect(page.getByRole("cell", { name: "31/02/2025", exact: true })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "2025-02-29", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /Review handoff/ }).click();
+  await expect(page.getByText("Review required", { exact: true })).toBeVisible();
+  await expect(page.locator("#approval-status option[value=approved]")).toHaveAttribute("disabled", "");
+  await expect(page.getByRole("button", { name: "Export issues CSV" })).toBeEnabled();
+});
+
+test("starts with an operable skip link and has no mobile overflow", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("body").press("Tab");
+  await expect(page.getByRole("link", { name: "Skip to workspace" })).toBeFocused();
+  if (page.viewportSize()?.width === 390) {
+    expect(await page.evaluate(() => document.documentElement.scrollWidth === window.innerWidth)).toBe(true);
+  }
+});

@@ -1,5 +1,7 @@
-const VERSION = "csv-contract-v1";
-const SHELL = ["/", "/index.html", "/manifest.webmanifest", "/offline.html", "/privacy/", "/terms/", "/legal.css", "/assets/main.js", "/assets/main.css", "/assets/icon-192.png", "/assets/icon-512.png", "/assets/contract-drafting-hero-768.webp", "/assets/contract-drafting-hero.jpg"];
+// This placeholder is replaced during `npm run build` with the exact hashed
+// production shell and a content-derived cache version.
+const VERSION = "csv-contract-build-pending";
+const SHELL = ["/", "/index.html", "/manifest.webmanifest", "/offline.html", "/privacy/", "/terms/", "/legal.css", "/assets/icon-192.ff209611.png", "/assets/icon-512.310d9284.png", "/assets/contract-drafting-hero-768.454a62e7.webp", "/assets/contract-drafting-hero.f693a142.jpg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(VERSION).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()));

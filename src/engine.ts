@@ -117,21 +117,35 @@ export function transformValue(input: string, transform: TransformName): string 
   }
   if (transform === "date") {
     const iso = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-    if (iso) return `${iso[1]}-${iso[2]?.padStart(2, "0")}-${iso[3]?.padStart(2, "0")}`;
+    if (iso && isValidCalendarDate(iso[1]!, iso[2]!, iso[3]!)) return `${iso[1]}-${iso[2]?.padStart(2, "0")}-${iso[3]?.padStart(2, "0")}`;
     const local = value.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
     if (local) {
       const year = local[3]?.length === 2 ? `20${local[3]}` : local[3];
-      return `${year}-${local[2]?.padStart(2, "0")}-${local[1]?.padStart(2, "0")}`;
+      if (year && isValidCalendarDate(year, local[2]!, local[1]!)) return `${year}-${local[2]?.padStart(2, "0")}-${local[1]?.padStart(2, "0")}`;
     }
   }
   return value;
+}
+
+function isValidCalendarDate(yearText: string, monthText: string, dayText: string): boolean {
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  if (!Number.isInteger(year) || year < 1 || !Number.isInteger(month) || month < 1 || month > 12 || !Number.isInteger(day) || day < 1) return false;
+  const monthLengths = [31, (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return day <= monthLengths[month - 1]!;
+}
+
+export function isValidISODate(value: string): boolean {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return Boolean(match && isValidCalendarDate(match[1]!, match[2]!, match[3]!));
 }
 
 function valueMatchesType(value: string, type: DataType): boolean {
   if (!value) return true;
   if (type === "number") return Number.isFinite(Number(value));
   if (type === "boolean") return value === "true" || value === "false";
-  if (type === "date") return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
+  if (type === "date") return isValidISODate(value);
   if (type === "email") return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   return true;
 }
