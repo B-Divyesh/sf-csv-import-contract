@@ -1,5 +1,28 @@
 # Build handoff — CSV Import Contract
 
+## Independent verification disposition (2026-08-27)
+
+**FAIL — do not release `ed89d8fd8c9cadb1217f342b1479c5fbb8799633`.**
+
+Fresh independent verification found that `31/02/2025` is transformed to
+`2025-02-31` and is accepted by date validation with no issue. This can result
+in an apparently valid/approved import contract containing an impossible date,
+which violates the core safe, repeatable handoff job. Full evidence, all
+commands, browser/PWA checks, live-deployment byte comparisons, and additional
+severity-ranked deployment findings are in `.factory/verification.md`.
+
+Tested commit and live URL:
+
+- `ed89d8fd8c9cadb1217f342b1479c5fbb8799633`
+- https://csv-import-contract.sociobot.in
+
+The live candidate matches the local production build byte-for-byte for the
+main app resources, so this is not a deployment-only failure. Required fix:
+strict calendar-date validation (including leap years) before approval/export,
+with regressions; then rerun independent verification. Also address the
+reported missing CSP/Permissions-Policy, non-immutable asset cache policy, and
+manifest MIME type.
+
 Work order: `csv-import-contract-build-1`
 
 Completed: 2026-08-27
