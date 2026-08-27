@@ -1,0 +1,15 @@
+{
+  "slug": "csv-import-contract",
+  "title": "CSV Import Contract",
+  "artifact_class": "pwa-offline",
+  "job": "Turn legacy CSV/XLSX exports into a repeatable, reviewable import contract with inspectable parsing assumptions, mappings, deterministic transformations, validations, and handoff artifacts.",
+  "user": "Implementation consultants and operations staff preparing legacy exports for system migrations.",
+  "constraints": [
+    "Files stay on the device",
+    "Transformations are deterministic and versioned",
+    "Destructive coercions are warned about",
+    "Error reports preserve original row numbers and values",
+    "No production import execution"
+  ],
+  "success_measure": "75% of files pass a second independent import using the contract without a new manual cleanup step."
+}
