@@ -1,5 +1,5 @@
 const VERSION = "csv-contract-v1";
-const SHELL = ["/", "/index.html", "/manifest.webmanifest", "/offline.html", "/privacy/", "/terms/", "/legal.css", "/assets/main.js", "/assets/main.css", "/assets/icon-192.png", "/assets/icon-512.png", "/assets/contract-drafting-hero-768.webp"];
+const SHELL = ["/", "/index.html", "/manifest.webmanifest", "/offline.html", "/privacy/", "/terms/", "/legal.css", "/assets/main.js", "/assets/main.css", "/assets/icon-192.png", "/assets/icon-512.png", "/assets/contract-drafting-hero-768.webp", "/assets/contract-drafting-hero.jpg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(VERSION).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()));

@@ -48,6 +48,11 @@ export interface Project {
   updatedAt: string;
   source?: SourceData;
   rules: ColumnRule[];
+  approval?: {
+    preparedBy: string;
+    reviewedBy: string;
+    status: "draft" | "approved";
+  };
 }
 
 export interface ImportContract {
@@ -66,5 +71,10 @@ export interface ImportContract {
     preserveOriginalRowNumbers: true;
     deterministicTransforms: true;
     destructiveCoercions: string[];
+  };
+  approval: {
+    preparedBy: string;
+    reviewedBy: string;
+    status: "draft" | "approved";
   };
 }

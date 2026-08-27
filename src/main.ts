@@ -8,7 +8,7 @@ const mount = document.querySelector<HTMLDivElement>("#app");
 if (!mount) throw new Error("App mount is missing.");
 const app: HTMLDivElement = mount;
 
-let project: Project = { id: "current", name: "Untitled migration", contractVersion: "1.0.0", updatedAt: new Date().toISOString(), rules: [] };
+let project: Project = { id: "current", name: "Untitled migration", contractVersion: "1.0.0", updatedAt: new Date().toISOString(), rules: [], approval: { preparedBy: "", reviewedBy: "", status: "draft" } };
 let step = 0;
 let busy = false;
 let saveStatus = "Ready";
@@ -19,6 +19,8 @@ let archives: Project[] = [];
 let updateAvailable = false;
 
 const steps = ["Source", "Map", "Validate", "Handoff"];
+const OFFLINE_KEY = "csv-contract:offline";
+const isOffline = (): boolean => !navigator.onLine || sessionStorage.getItem(OFFLINE_KEY) === "1";
 const esc = (value: unknown): string => String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character] ?? character);
 
 function formatBytes(bytes: number): string {
@@ -67,7 +69,7 @@ function header(): string {
     <header class="site-header">
       <a class="brand" href="/" aria-label="CSV Import Contract home"><span class="brand-mark" aria-hidden="true">⌗</span><span>CSV / import contract</span></a>
       <div class="header-actions">
-        <span class="connection" id="connection"><span aria-hidden="true">●</span> <span>${navigator.onLine ? "Local & online" : "Offline—local tools ready"}</span></span>
+        <span class="connection" id="connection"><span aria-hidden="true">●</span> <span>${isOffline() ? "Offline—local tools ready" : "Local & online"}</span></span>
         <button class="text-button" id="license-button" type="button">${license.unlocked ? "Pro active" : "Unlock Pro"}</button>
       </div>
     </header>`;
@@ -107,7 +109,7 @@ function emptyState(): string {
         <h2 id="start-heading">Inspect before you import.</h2>
         <p>Open a CSV or Excel export. We’ll reveal its parsing assumptions, propose a column contract, and keep every source value on your device.</p>
         <div class="drop-zone" id="drop-zone">
-          <input id="source-file" type="file" accept=".csv,.tsv,.txt,.xlsx,.xls" aria-describedby="file-help">
+          <input id="source-file" type="file" accept=".csv,.tsv,.txt,.xlsx" aria-describedby="file-help">
           <label class="primary-button" for="source-file">Choose a CSV or XLSX</label>
           <span id="file-help">or drop it here · processed locally</span>
         </div>
@@ -115,9 +117,9 @@ function emptyState(): string {
         <p class="error-message" id="file-error" role="alert"></p>
       </div>
       <picture class="hero-art">
-        <source srcset="/assets/contract-drafting-hero-768.avif 768w, /assets/contract-drafting-hero.avif 1280w" type="image/avif">
-        <source srcset="/assets/contract-drafting-hero-768.webp 768w, /assets/contract-drafting-hero.webp 1280w" type="image/webp">
-        <img src="/assets/contract-drafting-hero.webp" width="1280" height="853" fetchpriority="high" alt="Technical illustration of messy data strips passing through a measuring jig and becoming a precise contract sheet.">
+        <source srcset="/assets/contract-drafting-hero-768.avif 768w, /assets/contract-drafting-hero.avif 1280w" sizes="(max-width: 900px) 100vw, 55vw" type="image/avif">
+        <source srcset="/assets/contract-drafting-hero-768.webp 768w, /assets/contract-drafting-hero.webp 1280w" sizes="(max-width: 900px) 100vw, 55vw" type="image/webp">
+        <img src="/assets/contract-drafting-hero.jpg" width="1280" height="853" fetchpriority="high" alt="Technical illustration of messy data strips passing through a measuring jig and becoming a precise contract sheet.">
       </picture>
       <div class="trust-line"><span>01 / Read locally</span><span>02 / Make rules explicit</span><span>03 / Hand off evidence</span></div>
     </section>`;
@@ -142,7 +144,7 @@ function sourcePanel(): string {
       ${source.parse.sheet ? `<div><dt>Worksheet</dt><dd>${esc(source.parse.sheet)}</dd></div>` : ""}
     </dl>
     ${source.warnings.length ? `<div class="notice warning"><strong>Review the source</strong><ul>${source.warnings.map((warning) => `<li>${esc(warning)}</li>`).join("")}</ul></div>` : `<div class="notice success"><strong>Structure looks consistent</strong><span>No uneven records were found in the sample.</span></div>`}
-    <div class="table-wrap"><table><caption>First ${sampleRows.length} source rows</caption><thead><tr><th scope="col">Source row</th>${source.headers.map((header) => `<th scope="col">${esc(header)}</th>`).join("")}</tr></thead><tbody>${sampleRows.map((row, index) => `<tr><th scope="row">${index + 2}</th>${row.map((cell) => `<td>${esc(cell)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+    <div class="table-wrap" tabindex="0" aria-label="Scrollable source data preview"><table><caption>First ${sampleRows.length} source rows</caption><thead><tr><th scope="col">Source row</th>${source.headers.map((header) => `<th scope="col">${esc(header)}</th>`).join("")}</tr></thead><tbody>${sampleRows.map((row, index) => `<tr><th scope="row">${index + 2}</th>${row.map((cell) => `<td>${esc(cell)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
     ${panelActions("Continue to map", 1)}
   </section>`;
 }
@@ -188,7 +190,7 @@ function validationPanel(): string {
 }
 
 function issueTable(issues: ReturnType<typeof cleanAndValidate>["issues"]): string {
-  return `<div class="table-wrap"><table><caption>${issues.length} validation issues${issues.length === 100 ? " (first 100 shown)" : ""}</caption><thead><tr><th>Source row</th><th>Field</th><th>Issue</th><th>Original value</th></tr></thead><tbody>${issues.map((issue) => `<tr><th scope="row">${issue.row}</th><td>${esc(issue.target)}</td><td><span class="error-tag">${esc(issue.code)}</span> ${esc(issue.message)}</td><td><code>${esc(issue.originalValue || "(empty)")}</code></td></tr>`).join("")}</tbody></table></div>`;
+  return `<div class="table-wrap" tabindex="0" aria-label="Scrollable validation issues"><table><caption>${issues.length} validation issues${issues.length === 100 ? " (first 100 shown)" : ""}</caption><thead><tr><th>Source row</th><th>Field</th><th>Issue</th><th>Original value</th></tr></thead><tbody>${issues.map((issue) => `<tr><th scope="row">${issue.row}</th><td>${esc(issue.target)}</td><td><span class="error-tag">${esc(issue.code)}</span> ${esc(issue.message)}</td><td><code>${esc(issue.originalValue || "(empty)")}</code></td></tr>`).join("")}</tbody></table></div>`;
 }
 
 function handoffPanel(): string {
@@ -196,14 +198,21 @@ function handoffPanel(): string {
   const result = cleanAndValidate(source, project.rules);
   const included = project.rules.filter((rule) => rule.include);
   const coercions = included.filter((rule) => ["number", "date", "boolean"].includes(rule.transform));
+  const targetNames = included.map((rule) => rule.target.trim()).filter(Boolean);
+  const mappingProblems = !included.length || included.some((rule) => !rule.target.trim()) || new Set(targetNames).size !== targetNames.length;
   return `<section class="panel" aria-labelledby="handoff-heading">
     <div class="panel-heading"><div><p class="dimension">04 — issue for handoff</p><h2 id="handoff-heading">A portable agreement</h2><p>Export the machine-readable contract, cleaned review file, and evidence report together.</p></div><span class="approval-stamp ${result.issues.length ? "revision" : ""}">${result.issues.length ? "Review required" : "Ready to hand off"}</span></div>
     <div class="project-fields"><label><span>Project / client name</span><input id="project-name" value="${esc(project.name)}"></label><label><span>Contract version</span><input id="contract-version" value="${esc(project.contractVersion)}" pattern="\d+\.\d+\.\d+"></label></div>
+    <fieldset class="signoff"><legend>Review sign-off</legend><label><span>Prepared by</span><input id="prepared-by" value="${esc(project.approval?.preparedBy ?? "")}"></label><label><span>Reviewed by</span><input id="reviewed-by" value="${esc(project.approval?.reviewedBy ?? "")}"></label><label><span>Status</span><select id="approval-status"><option value="draft" ${project.approval?.status !== "approved" ? "selected" : ""}>Draft</option><option value="approved" ${project.approval?.status === "approved" ? "selected" : ""} ${result.issues.length ? "disabled" : ""}>Approved${result.issues.length ? " — resolve issues first" : ""}</option></select></label></fieldset>
+    ${mappingProblems ? '<div class="notice danger"><strong>Mapping is not exportable</strong><span>Include at least one field, and give every included target a unique name. Return to Map to correct it.</span></div>' : ""}
     ${coercions.length ? `<div class="notice warning"><strong>Destructive coercions are documented</strong><span>${coercions.map((rule) => `${esc(rule.source)} → ${esc(rule.transform)}`).join(" · ")}. Original values remain in the issue report.</span></div>` : ""}
+    <section class="clean-preview" aria-labelledby="clean-preview-heading"><div class="subheading"><h3 id="clean-preview-heading">Cleaned preview</h3><span>First ${Math.min(5, result.rows.length)} rows after transforms</span></div>
+      <div class="table-wrap" tabindex="0" aria-label="Scrollable cleaned data preview"><table><caption>Transformed values before export</caption><thead><tr><th>Source row</th>${included.map((rule) => `<th>${esc(rule.target || "(unnamed)")}</th>`).join("")}</tr></thead><tbody>${result.rows.slice(0, 5).map((row, index) => `<tr><th scope="row">${index + 2}</th>${row.map((cell) => `<td>${esc(cell)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+    </section>
     <div class="export-grid">
-      <article><span class="file-mark">{ }</span><h3>Contract JSON</h3><p>Parsing syntax, mappings, transforms, validation rules, and safety notes.</p><button class="primary-button export" data-export="contract" type="button">Export contract</button></article>
-      <article><span class="file-mark">CSV</span><h3>Cleaned preview</h3><p>All transformed rows, ready for an independent test import.</p><button class="secondary-button export" data-export="clean" type="button">Export cleaned CSV</button></article>
-      <article><span class="file-mark">MD</span><h3>Handoff report</h3><p>Human-readable decisions, counts, warnings, and issue evidence.</p><button class="secondary-button export" data-export="report" type="button">Export report</button></article>
+      <article><span class="file-mark">{ }</span><h3>Contract JSON</h3><p>Parsing syntax, mappings, transforms, validation rules, and safety notes.</p><button class="primary-button export" data-export="contract" type="button" ${mappingProblems ? "disabled" : ""}>Export contract</button></article>
+      <article><span class="file-mark">CSV</span><h3>Cleaned data</h3><p>All transformed rows, ready for an independent test import.</p><button class="secondary-button export" data-export="clean" type="button" ${mappingProblems ? "disabled" : ""}>Export cleaned CSV</button></article>
+      <article><span class="file-mark">MD</span><h3>Handoff report</h3><p>Human-readable decisions, counts, warnings, and issue evidence.</p><button class="secondary-button export" data-export="report" type="button" ${mappingProblems ? "disabled" : ""}>Export report</button></article>
       <article><span class="file-mark">!</span><h3>Error evidence</h3><p>Source row, target field, reason, and untouched original value.</p><button class="secondary-button export" data-export="errors" type="button" ${!result.issues.length ? "disabled" : ""}>Export issues CSV</button></article>
     </div>
     <div class="import-contract"><div><h3>Repeat this contract</h3><p>Open a contract JSON after choosing another compatible source file.</p></div><label class="secondary-button" for="contract-file">Import contract JSON</label><input class="sr-only" id="contract-file" type="file" accept="application/json,.json"></div>
@@ -239,7 +248,7 @@ async function readSource(file: File): Promise<void> {
   if (error) error.textContent = "Reading the file locally…";
   try {
     let source: SourceData;
-    if (/\.xlsx?$/i.test(file.name)) {
+    if (/\.xlsx$/i.test(file.name)) {
       const XLSX = await import("read-excel-file/browser");
       const sheets = await XLSX.default(file);
       const firstSheet = sheets[0];
@@ -261,13 +270,14 @@ async function readSource(file: File): Promise<void> {
     }
     project.source = source;
     project.rules = createRules(source);
+    project.approval = { preparedBy: project.approval?.preparedBy ?? "", reviewedBy: "", status: "draft" };
     step = 0;
     announcement = `${file.name} profiled. ${source.rows.length} rows and ${source.headers.length} columns found.`;
     scheduleSave();
     render();
   } catch (caught) {
     const message = caught instanceof Error ? caught.message : "The file could not be read.";
-    if (error) error.textContent = `${message} Choose a CSV, TSV, XLS, or XLSX with headings in its first row.`;
+    if (error) error.textContent = `${message} Choose a CSV, TSV, or XLSX with headings in its first row.`;
   } finally { busy = false; }
 }
 
@@ -277,11 +287,16 @@ function updateRule(element: HTMLInputElement | HTMLSelectElement): void {
   const field = element.dataset.field as keyof ColumnRule | undefined;
   const rule = project.rules[index];
   if (!rule || !field) return;
+  if (field === "pattern" && element.value) {
+    try { new RegExp(element.value); (element as HTMLInputElement).setCustomValidity(""); }
+    catch { (element as HTMLInputElement).setCustomValidity("Enter a valid regular expression."); (element as HTMLInputElement).reportValidity(); return; }
+  }
   if (field === "include" || field === "required" || field === "unique") rule[field] = (element as HTMLInputElement).checked;
   else if (field === "allowedValues") rule.allowedValues = element.value.split(",").map((value) => value.trim()).filter(Boolean);
   else if (field === "type") rule.type = element.value as ColumnRule["type"];
   else if (field === "transform") rule.transform = element.value as ColumnRule["transform"];
   else if (field === "target" || field === "pattern") rule[field] = element.value;
+  if (project.approval?.status === "approved") project.approval.status = "draft";
   scheduleSave();
 }
 
@@ -289,13 +304,19 @@ function reportText(): string {
   const source = project.source!;
   const result = cleanAndValidate(source, project.rules);
   const contract = makeContract(project);
-  return `# Import handoff — ${project.name}\n\nContract version: ${project.contractVersion}\nGenerated: ${contract.createdAt}\n\n## Source profile\n\n- File: ${source.fileName}\n- Rows: ${source.rows.length}\n- Columns: ${source.headers.length}\n- Format: ${source.parse.format.toUpperCase()}\n- Delimiter: ${source.parse.delimiter || "worksheet cells"}\n- Quote: ${source.parse.quote || "n/a"}\n- Newline: ${JSON.stringify(source.parse.newline)}\n- Encoding: UTF-8\n\n## Mapping and rules\n\n${project.rules.filter((rule) => rule.include).map((rule) => `- ${rule.source} → ${rule.target} (${rule.type}; transform: ${rule.transform}; required: ${rule.required}; unique: ${rule.unique})`).join("\n")}\n\n## Validation result\n\n${result.issues.length ? `${result.issues.length} issue(s) found. See the exported error CSV for source rows and original values.` : `All ${source.rows.length} rows passed the current rules.`}\n\n## Safety\n\nTransforms are deterministic. Original source row numbers and values are preserved in issue evidence. This contract does not execute a production import.\n`;
+  const issueEvidence = result.issues.slice(0, 100).map((issue) => `- Row ${issue.row}, ${issue.target}: ${issue.message} Original value: ${JSON.stringify(issue.originalValue)}`).join("\n");
+  return `# Import handoff — ${project.name}\n\nContract version: ${project.contractVersion}\nGenerated: ${contract.createdAt}\nStatus: ${contract.approval.status}\nPrepared by: ${contract.approval.preparedBy || "Not recorded"}\nReviewed by: ${contract.approval.reviewedBy || "Not recorded"}\n\n## Source profile\n\n- File: ${source.fileName}\n- Rows: ${source.rows.length}\n- Columns: ${source.headers.length}\n- Format: ${source.parse.format.toUpperCase()}\n- Delimiter: ${source.parse.delimiter || "worksheet cells"}\n- Quote: ${source.parse.quote || "n/a"}\n- Newline: ${JSON.stringify(source.parse.newline)}\n- Encoding: UTF-8\n${source.warnings.map((warning) => `- Warning: ${warning}`).join("\n")}\n\n## Mapping and rules\n\n${project.rules.filter((rule) => rule.include).map((rule) => `- ${rule.source} → ${rule.target} (${rule.type}; transform: ${rule.transform}; required: ${rule.required}; unique: ${rule.unique})`).join("\n")}\n\n## Validation result\n\n${result.issues.length ? `${result.issues.length} issue(s) found.\n\n${issueEvidence}${result.issues.length > 100 ? "\n- Additional issues are available in the exported error CSV." : ""}` : `All ${source.rows.length} rows passed the current rules.`}\n\n## Safety\n\nTransforms are deterministic. Original source row numbers and values are preserved in issue evidence. This contract does not execute a production import.\n`;
 }
 
 function exportArtifact(kind: string): void {
   const source = project.source!;
   const result = cleanAndValidate(source, project.rules);
   const active = project.rules.filter((rule) => rule.include);
+  const targetNames = active.map((rule) => rule.target.trim()).filter(Boolean);
+  if (!active.length || active.some((rule) => !rule.target.trim()) || new Set(targetNames).size !== targetNames.length) {
+    alert("Include at least one field and give every included target a unique name before export.");
+    return;
+  }
   const base = project.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "import";
   if (kind === "contract") download(`${base}.import-contract.json`, JSON.stringify(makeContract(project), null, 2), "application/json");
   if (kind === "clean") download(`${base}.cleaned.csv`, toCSV(active.map((rule) => rule.target), result.rows), "text/csv;charset=utf-8");
@@ -325,18 +346,26 @@ function bindEvents(): void {
   });
   document.querySelectorAll<HTMLButtonElement>(".export").forEach((button) => button.addEventListener("click", () => exportArtifact(button.dataset.export ?? "")));
   document.querySelector("#project-name")?.addEventListener("change", (event) => { project.name = (event.target as HTMLInputElement).value.trim() || "Untitled migration"; scheduleSave(); });
-  document.querySelector("#contract-version")?.addEventListener("change", (event) => { const value = (event.target as HTMLInputElement).value; if (/^\d+\.\d+\.\d+$/.test(value)) { project.contractVersion = value; scheduleSave(); } });
+  document.querySelector("#contract-version")?.addEventListener("change", (event) => {
+    const input = event.target as HTMLInputElement;
+    if (!/^\d+\.\d+\.\d+$/.test(input.value)) { input.setCustomValidity("Use a semantic version such as 1.0.0."); input.reportValidity(); return; }
+    input.setCustomValidity(""); project.contractVersion = input.value; scheduleSave();
+  });
+  document.querySelector("#prepared-by")?.addEventListener("change", (event) => { project.approval = { ...(project.approval ?? { preparedBy: "", reviewedBy: "", status: "draft" }), preparedBy: (event.target as HTMLInputElement).value.trim() }; scheduleSave(); });
+  document.querySelector("#reviewed-by")?.addEventListener("change", (event) => { project.approval = { ...(project.approval ?? { preparedBy: "", reviewedBy: "", status: "draft" }), reviewedBy: (event.target as HTMLInputElement).value.trim() }; scheduleSave(); });
+  document.querySelector("#approval-status")?.addEventListener("change", (event) => { project.approval = { ...(project.approval ?? { preparedBy: "", reviewedBy: "", status: "draft" }), status: (event.target as HTMLSelectElement).value as "draft" | "approved" }; scheduleSave(); render(); });
   const contractFile = document.querySelector<HTMLInputElement>("#contract-file");
   contractFile?.addEventListener("change", async () => {
     const file = contractFile.files?.[0];
     if (!file || !project.source) return;
     try {
-      const contract = JSON.parse(await file.text()) as { version?: string; project?: string; columns?: ColumnRule[] };
+      const contract = JSON.parse(await file.text()) as { version?: string; project?: string; columns?: ColumnRule[]; approval?: Project["approval"] };
       if (!Array.isArray(contract.columns)) throw new Error("Missing columns");
       const available = new Set(project.source.headers);
       project.rules = contract.columns.map((rule) => ({ ...rule, include: available.has(rule.source) }));
       project.contractVersion = contract.version ?? project.contractVersion;
       project.name = contract.project ?? project.name;
+      project.approval = contract.approval ?? project.approval;
       scheduleSave(); announcement = "Contract imported and matched to the current source."; render();
     } catch { alert("That JSON is not a supported import contract. Export a v1 contract and try again."); }
   });
@@ -375,8 +404,8 @@ function bindEvents(): void {
   document.querySelector("#reload-app")?.addEventListener("click", () => location.reload());
 }
 
-window.addEventListener("online", () => { const element = document.querySelector("#connection span:last-child"); if (element) element.textContent = "Local & online"; });
-window.addEventListener("offline", () => { const element = document.querySelector("#connection span:last-child"); if (element) element.textContent = "Offline—local tools ready"; });
+window.addEventListener("online", () => { sessionStorage.removeItem(OFFLINE_KEY); const element = document.querySelector("#connection span:last-child"); if (element) element.textContent = "Local & online"; });
+window.addEventListener("offline", () => { sessionStorage.setItem(OFFLINE_KEY, "1"); const element = document.querySelector("#connection span:last-child"); if (element) element.textContent = "Offline—local tools ready"; });
 
 async function start(): Promise<void> {
   try { project = await loadProject() ?? project; } catch { saveStatus = "Local storage unavailable"; }
@@ -384,8 +413,12 @@ async function start(): Promise<void> {
   render();
   if (license.token) { license = await verifyLicense(license.token); render(); }
   if ("serviceWorker" in navigator) {
+    let alreadyControlled = Boolean(navigator.serviceWorker.controller);
     navigator.serviceWorker.register("/sw.js").catch(() => { /* app remains usable */ });
-    navigator.serviceWorker.addEventListener("controllerchange", () => { updateAvailable = true; render(); });
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (alreadyControlled) { updateAvailable = true; render(); }
+      alreadyControlled = true;
+    });
   }
 }
 

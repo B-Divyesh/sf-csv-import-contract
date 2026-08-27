@@ -165,6 +165,10 @@ export function cleanAndValidate(source: SourceData, rules: ColumnRule[]): { row
 export function makeContract(project: Project): ImportContract {
   if (!project.source) throw new Error("A source file is required.");
   const destructive = project.rules.filter((rule) => ["number", "date", "boolean"].includes(rule.transform)).map((rule) => `${rule.source} → ${rule.transform}`);
+  const requestedApproval = project.approval ?? { preparedBy: "", reviewedBy: "", status: "draft" as const };
+  const approval = requestedApproval.status === "approved" && cleanAndValidate(project.source, project.rules).issues.length
+    ? { ...requestedApproval, status: "draft" as const }
+    : requestedApproval;
   return {
     schema: "https://csv-import-contract.sociobot.in/schema/v1",
     version: project.contractVersion,
@@ -177,7 +181,8 @@ export function makeContract(project: Project): ImportContract {
       parse: project.source.parse
     },
     columns: project.rules.filter((rule) => rule.include),
-    safety: { preserveOriginalRowNumbers: true, deterministicTransforms: true, destructiveCoercions: destructive }
+    safety: { preserveOriginalRowNumbers: true, deterministicTransforms: true, destructiveCoercions: destructive },
+    approval
   };
 }
 
