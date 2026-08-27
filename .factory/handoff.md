@@ -1,104 +1,102 @@
-# Build handoff — CSV Import Contract
+# Repair handoff — CSV Import Contract
 
-## Independent verification disposition (2026-08-27)
+## Release disposition
 
-**FAIL — do not release `ed89d8fd8c9cadb1217f342b1479c5fbb8799633`.**
+**PASS — repaired and deployed 2026-08-27.**
 
-Fresh independent verification found that `31/02/2025` is transformed to
-`2025-02-31` and is accepted by date validation with no issue. This can result
-in an apparently valid/approved import contract containing an impossible date,
-which violates the core safe, repeatable handoff job. Full evidence, all
-commands, browser/PWA checks, live-deployment byte comparisons, and additional
-severity-ranked deployment findings are in `.factory/verification.md`.
+This repair addresses every release-blocking finding in the independent
+verification report recorded at `25aa60c11a80672c0a772b93347e2ec7eae2e58e`
+for candidate `ed89d8fd8c9cadb1217f342b1479c5fbb8799633`.
 
-Tested commit and live URL:
+- Repair commit: `a6fb16e776523d1f2fa429b9b8f707ab4fea6fa3`
+- Live URL: https://csv-import-contract.sociobot.in
+- Deployment: Azure Static Web Apps static upload, deployment ID
+  `9664f427-4641-41ae-b0d0-2b4dd8999223`
+- Deploy output: `dist/` with `dist/index.html`
 
-- `ed89d8fd8c9cadb1217f342b1479c5fbb8799633`
-- https://csv-import-contract.sociobot.in
+## What was repaired
 
-The live candidate matches the local production build byte-for-byte for the
-main app resources, so this is not a deployment-only failure. Required fix:
-strict calendar-date validation (including leap years) before approval/export,
-with regressions; then rerun independent verification. Also address the
-reported missing CSP/Permissions-Policy, non-immutable asset cache policy, and
-manifest MIME type.
+### VALIDATION-001 — impossible calendar dates
 
-Work order: `csv-import-contract-build-1`
+Date transforms and validation now use explicit calendar checks for valid
+month lengths and Gregorian leap years; they no longer rely on JavaScript's
+normalizing `Date.parse` behavior. Invalid dates are left as their source value
+instead of being silently converted into a misleading ISO-looking value.
 
-Completed: 2026-08-27
+Exact regressions cover `31/02/2025`, `2025-02-29`, and `2024-02-29` in the
+engine. The browser regression uploads all three values, confirms the first two
+produce type issues with original source evidence, confirms the leap-day value
+passes, and confirms approval remains unavailable while issue export remains
+available.
 
-Deploy type: static PWA; output is `dist/`
+### SEC-001, PERF-001, DEPLOY-001 — static delivery
 
-## What shipped
+- Added `public/staticwebapp.config.json` for the static deployment: CSP,
+  Permissions-Policy, `X-Frame-Options: DENY`, nosniff, and referrer policy.
+  The CSP permits only this origin plus the required Sociobot license-verification
+  API; `style-src 'unsafe-inline'` is retained solely for the shipped offline
+  fallback's inline stylesheet.
+- Vite JS/CSS chunks now use content hashes. Static illustration and icon names
+  are content-hashed too, and `/assets/*` is served with one-year immutable
+  caching. The stable manifest and service worker are deliberately revalidated.
+- The production service worker is generated after the Vite build. Its cache
+  version is derived from both the shell paths and their bytes, so a changed
+  stable file also creates a new cache and update.
+- The manifest now has the `application/manifest+json` MIME type.
 
-- A complete local four-stage workflow: source profile, mapping/transforms,
-  validations, and reviewable handoff.
-- CSV syntax detection for delimiter, quote, newline, UTF-8, uneven rows, empty
-  headings, and duplicate headings; XLSX parsing is lazy-loaded and profiles the
-  first worksheet.
-- Deterministic trim, case, number, date, and boolean transforms with warnings
-  for coercive operations.
-- Required, unique, inferred-type, allowed-value, and regex checks. Issue output
-  always includes original source row and original value.
-- Visible source/cleaned previews plus exports for versioned contract JSON,
-  cleaned CSV, Markdown handoff report, and issue evidence CSV. Contract JSON can
-  be imported against a subsequent source.
-- Prepared-by, reviewed-by, semantic contract version, and draft/approved review
-  sign-off. A failing validation cannot be exported as approved.
-- IndexedDB current-project persistence, explicit exports, install manifest,
-  versioned service-worker shell, asset caching, offline fallback, online/offline
-  status, and update-ready notice.
-- One-time $29 Pro unlock through the required Sociobot checkout/verify endpoints,
-  daily verdict cache, URL token capture/cleanup, restore field, quiet revocation
-  handling, and an implemented multi-client project archive. Safety and exports
-  are never paywalled.
-- Static privacy and terms pages, MIT license, responsive 390 px layout, keyboard
-  focus treatment, reduced-motion mode, and no analytics/CDNs/remote fonts.
-- A product-specific blueprint drafting visual system and an original generated
-  alignment-jig illustration. Source, prompt sidecars, responsive AVIF/WebP/JPEG,
-  icon source, and provenance are retained in the repository.
+The release-policy Vitest regression asserts the security directives, manifest
+MIME mapping, immutable asset route, and worker revalidation policy.
 
 ## How to run and deploy
 
 ```sh
-npm install
+npm ci
 npm test
 npm run build
 npm run test:e2e
 ```
 
-Factory deploy command: `npm run build`
+`npm run build` typechecks, produces `dist/`, and generates the versioned
+production service worker. The factory static deploy command used for this
+release was:
 
-Deploy directory: `dist` (`dist/index.html` is present)
+```sh
+/opt/fleet/lib/deploy-static.sh csv-import-contract dist
+```
 
-The release environment should register the billing product for slug
-`csv-import-contract`; the client intentionally contains no product ID or secret.
+## Verification evidence
 
-## Verification performed
+| Check | Result |
+| --- | --- |
+| Clean install | `npm ci` passed; 189 packages installed; audit reported 0 vulnerabilities. |
+| Unit/release policy | `npm test` passed: 6/6 tests in 2 files. |
+| Typecheck/production build | `npm run build` passed; `tsc --noEmit` passed and `dist/` was produced. |
+| Browser, desktop + 390 px | `npm run test:e2e` passed: 8/8 Playwright tests across 1440×1000 desktop and 390×844 mobile. |
+| Accessibility | Playwright axe scan found 0 serious/critical issues in each viewport workflow. Keyboard regression verifies the visible first-tab skip link; mobile regression confirms no horizontal overflow. |
+| PWA/local first | E2E reloads the saved sample while `context.setOffline(true)`. A fresh live 1440 px browser run saved `offline-live.csv`, reloaded under offline mode, retained it, and reported no errors. |
+| Privacy | Free-path request capture in browser tests makes no API request; source processing remains local. The CSP permits only same-origin resources and the optional license API. |
+| Dependency audit | `npm audit --omit=dev` passed: 0 vulnerabilities. |
+| Local smoke | `/opt/fleet/lib/verify-url.sh` against the production preview passed: title, `lang`, one `h1`, `main`, image alt coverage, and console errors all clean. |
+| Live smoke | The same verifier script passed against the live URL. A live 390 px run produced exactly 2 calendar issues, had `scrollWidth === innerWidth === 390`, 0 axe serious/critical findings, and no console/page errors. |
+| Live identity | SHA-256 matched local `dist/` and live `index.html`, `manifest.webmanifest`, `sw.js`, `assets/main-C_U0jZ6z.js`, and `assets/main-DUv89UG7.css`. |
+| Live response policy | Root has CSP, Permissions-Policy, `X-Frame-Options: DENY`, HSTS, nosniff, and referrer policy. `manifest.webmanifest` is `application/manifest+json`; hashed main JS is `Cache-Control: public, max-age=31536000, immutable`; `sw.js` is `no-cache, no-store, must-revalidate`. |
 
-- `npm test`: 4/4 unit tests passed (syntax, quoting, stable headings,
-  transforms, source evidence, CSV escaping, versioned contract).
-- `npm run test:e2e`: 2/2 Playwright tests passed at 390×844. Covered sample
-  ingest, all four steps, output readiness, IndexedDB restoration, a real
-  `context.setOffline(true)` reload, privacy/terms landmarks, console errors,
-  and axe. Serious/critical axe violations: 0.
-- `npm audit --omit=dev`: 0 vulnerabilities.
-- Production output: initial JS 35.14 KB (12.22 KB gzip), lazy XLSX chunk 65.44
-  KB (19.34 KB gzip), CSS 17.32 KB (4.51 KB gzip). Largest hero variant is 131
-  KB; served AVIF is 75 KB desktop / 27 KB mobile.
-- Lighthouse mobile against the production preview: Performance 100,
-  Accessibility 100, Best Practices 100, SEO 100. FCP 1.0 s, LCP 1.6 s, CLS 0,
-  Total Blocking Time 0 ms, Time to Interactive 1.6 s.
-- Manual visual review completed at 1440×1000 and 390×844. The generated hero
-  was inspected at source resolution for text artifacts, brands, and seams.
+Production asset measurements: main JS 35,524 B (12,417 B gzip), main CSS
+17,320 B (4,505 B gzip), and lazy XLSX chunk 65,440 B (19,344 B gzip). Initial
+JS/CSS remain under the static-product budgets.
+
+Lighthouse CLI was attempted against the production preview with the supplied
+Chromium binary, but Chromium crashed its tab before producing a report. This
+is recorded as an environment limitation, not as a score; all directly
+observable Lighthouse-class, axe, browser, PWA, and response-policy checks
+above passed.
 
 ## Known limits / next steps
 
-- XLSX intentionally uses the first worksheet and says which sheet was used. A
-  worksheet picker would be the next enhancement for workbooks containing
-  multiple candidate exports.
-- CSV text decoding is UTF-8 only. Legacy encodings should be re-exported as
-  UTF-8 so parsing is deterministic and reviewable.
-- Contract signatures are named workflow sign-offs, not cryptographic signatures.
-- The tool prepares and verifies handoff artifacts; it deliberately does not
-  connect to databases or execute production imports.
+- XLSX intentionally uses the first worksheet. A worksheet picker is the next
+  enhancement for workbooks with multiple candidate exports.
+- CSV decoding is UTF-8 only; legacy encodings should be re-exported as UTF-8
+  for deterministic review.
+- Contract sign-offs are named workflow approvals, not cryptographic signatures.
+- The product prepares and verifies handoff artifacts; it never executes a
+  production import.
