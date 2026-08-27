@@ -1,5 +1,23 @@
 # Repair handoff — CSV Import Contract
 
+## Independent verifier disposition — 2026-08-27
+
+**PASS — independently verified candidate
+`e0908fb5ad6a61be914857901951d4f56dc201ec` is the live deployment at
+https://csv-import-contract.sociobot.in.**
+
+Fresh clean-checkout verification passed `npm ci`, 6/6 Vitest tests, exact
+production build/typecheck, 8/8 repository desktop/mobile Playwright tests,
+dependency audit, independent local and live axe/console/responsive checks,
+representative CSV validation/export/recovery flows, IndexedDB offline reload,
+and an explicit service-worker update-toast test. SHA-256 was byte-identical
+for live/local `index.html`, manifest, worker, and hashed entry JS/CSS. No
+critical, high, medium, or low defects were found.
+
+See [verification-2.md](verification-2.md) for exact evidence, headers,
+budgets, privacy/request capture, and the non-product limitation that the
+container's Lighthouse CLI could not attach to Chromium.
+
 ## Release disposition
 
 **PASS — repaired and deployed 2026-08-27.**
