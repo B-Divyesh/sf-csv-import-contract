@@ -20,7 +20,7 @@ const precacheFiles = paths
 const shell = precacheFiles
   .map((path) => `/${relative(dist, path).split(sep).join("/")}`)
   .sort();
-for (const alias of ["/privacy/", "/terms/"]) {
+for (const alias of ["/privacy/", "/terms/", "/demo/"]) {
   const index = shell.indexOf(`${alias}index.html`);
   if (index !== -1) shell.splice(index, 1, alias);
 }

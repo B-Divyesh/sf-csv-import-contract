@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="CSV Import Contract registration mark">
+  <rect width="512" height="512" fill="#F3F0E7"/>
+  <path d="M64 64h128M64 64v128M448 64H320M448 64v128M64 448h128M64 448V320M448 448H320M448 448V320" fill="none" stroke="#12324A" stroke-width="24"/>
+  <path d="M118 198h174l-42-42m42 42-42 42M394 314H220l42-42m-42 42 42 42" fill="none" stroke="#087F8C" stroke-linecap="square" stroke-linejoin="miter" stroke-width="26"/>
+  <circle cx="118" cy="198" r="16" fill="#A33A2B"/><circle cx="394" cy="314" r="16" fill="#2D6A4F"/>
+</svg>

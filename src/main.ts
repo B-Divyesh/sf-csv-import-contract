@@ -1,21 +1,27 @@
 import "./styles.css";
 import { cleanAndValidate, createRules, makeContract, parseCSV, toCSV } from "./engine";
-import { clearProject, listProjects, loadProject, saveProject } from "./storage";
-import { checkoutUrl, initialLicenseState, storeLicense, verifyLicense, type LicenseState } from "./license";
+import { clearProject, loadProject, saveProject, type StorageScope } from "./storage";
 import type { ColumnRule, Project, SourceData, TransformName } from "./types";
 
 const mount = document.querySelector<HTMLDivElement>("#app");
 if (!mount) throw new Error("App mount is missing.");
 const app: HTMLDivElement = mount;
 
-let project: Project = { id: "current", name: "Untitled migration", contractVersion: "1.0.0", updatedAt: new Date().toISOString(), rules: [], approval: { preparedBy: "", reviewedBy: "", status: "draft" } };
+const path = location.pathname.replace(/\/+$/, "") || "/";
+const demoMode = path === "/demo" || new URL(location.href).searchParams.get("demo") === "1";
+const storageScope: StorageScope = demoMode ? "demo" : "real";
+const blankProject = (): Project => ({ id: "current", name: "Untitled migration", contractVersion: "1.0.0", updatedAt: new Date().toISOString(), rules: [], approval: { preparedBy: "", reviewedBy: "", status: "draft" } });
+function sampleProject(): Project {
+  const source = parseCSV("Customer ID,Email,Join date,Active,Balance\nC-001, ADA@EXAMPLE.COM ,31/01/2025,yes,\"1,200\"\nC-002,bad address,2025-02-04,no,58.40\nC-002,grace@example.com,05/02/2025,Y,unknown", "migration-sample.csv");
+  source.fileSize = 164;
+  return { ...blankProject(), name: "Migration sample", source, rules: createRules(source) };
+}
+let project: Project = demoMode ? sampleProject() : blankProject();
 let step = 0;
 let busy = false;
 let saveStatus = "Ready";
 let saveTimer = 0;
-let license: LicenseState = initialLicenseState();
 let announcement = "";
-let archives: Project[] = [];
 let updateAvailable = false;
 
 const steps = ["Source", "Map", "Validate", "Handoff"];
@@ -44,7 +50,7 @@ function scheduleSave(): void {
   saveTimer = window.setTimeout(async () => {
     project.updatedAt = new Date().toISOString();
     try {
-      await saveProject(project);
+      await saveProject(project, storageScope);
       saveStatus = "Saved on this device";
     } catch {
       saveStatus = "Could not save locally";
@@ -67,10 +73,10 @@ function renderChromeStatus(): void {
 function header(): string {
   return `<a class="skip-link" href="#main">Skip to workspace</a>
     <header class="site-header">
-      <a class="brand" href="/" aria-label="CSV Import Contract home"><span class="brand-mark" aria-hidden="true">⌗</span><span>CSV / import contract</span></a>
+      <a class="brand" href="/" aria-label="CSV Import Contract home"><span class="brand-mark" aria-hidden="true">⌗</span><span>CSV Import Contract</span></a>
       <div class="header-actions">
-        <span class="connection" id="connection"><span aria-hidden="true">●</span> <span>${isOffline() ? "Offline—local tools ready" : "Local & online"}</span></span>
-        <button class="text-button" id="license-button" type="button">${license.unlocked ? "Pro active" : "Unlock Pro"}</button>
+        <nav class="top-nav" aria-label="Site"><a href="/demo">Try sample</a><a href="/privacy/">Privacy</a></nav>
+        <span class="connection" id="connection"><span aria-hidden="true">●</span> <span>${isOffline() ? "Offline" : "Ready"}</span></span>
       </div>
     </header>`;
 }
@@ -78,24 +84,25 @@ function header(): string {
 function shell(content: string): string {
   const sourceReady = Boolean(project.source);
   return `${header()}
+    ${demoMode ? `<aside class="demo-banner" aria-label="Demo controls"><strong>Demo — sample data, nothing is saved</strong><span>Changes stay in a separate demo workspace.</span><button id="reset-demo" type="button">Reset demo</button><a href="/" id="start-real">Start for real</a></aside>` : ""}
     <div class="sheet-number" aria-hidden="true">SHEET 01 / REV ${esc(project.contractVersion)}</div>
     <main id="main" tabindex="-1">
       <section class="masthead">
         <div>
-          <p class="eyebrow">Local migration workbench</p>
-          <h1>Make the import<br><em>repeatable.</em></h1>
-          <p class="lede">Turn parsing assumptions, column decisions, and validation rules into a contract another person can run—not another undocumented cleanup.</p>
+          <p class="eyebrow">CSV import plan for migration teams</p>
+          <h1 tabindex="-1">Prepare a CSV import <em>contract</em></h1>
+          <p class="lede">For migration teams who need another person to repeat a CSV import.</p>
+          ${demoMode ? "" : `<div class="first-actions"><a class="primary-button" href="/demo">Try it with sample data</a><span>See a filled contract, checks, and handoff files now.</span></div><ul class="fact-list"><li>Files stay on this device</li><li>Works offline after first visit</li><li>Core exports are free</li></ul>`}
         </div>
-        ${sourceReady ? `<div class="source-stamp"><span>Active source</span><strong>${esc(project.source?.fileName)}</strong><small>${project.source?.rows.length.toLocaleString()} data rows · never uploaded</small></div>` : ""}
+        ${sourceReady ? `<div class="source-stamp"><span>Active source</span><strong>${esc(project.source?.fileName)}</strong><small>${project.source?.rows.length.toLocaleString()} data rows</small></div>` : ""}
       </section>
       ${sourceReady ? navigation() : ""}
       <div id="workspace" class="workspace">${content}</div>
     </main>
-    <footer><p>Files and working data stay in this browser. <a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p><p>Original generated illustration · CSV Import Contract v1</p></footer>
+    <footer><p>CSV import plans for repeatable migration handoffs. <a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p><p>Built by Param Factory · build ${esc(project.contractVersion)}</p></footer>
     <div class="save-strip"><span id="save-status">${esc(saveStatus)}</span><span>Contract ${esc(project.contractVersion)}</span></div>
     <div id="announcer" class="sr-only" aria-live="polite"></div>
-    ${updateAvailable ? '<div class="update-toast" role="status"><span>An app update is ready.</span><button id="reload-app" type="button">Reload</button></div>' : ""}
-    <dialog id="license-dialog">${licenseDialog()}</dialog>`;
+    ${updateAvailable ? '<div class="update-toast" role="status"><span>An app update is ready.</span><button id="reload-app" type="button">Reload</button></div>' : ""}`;
 }
 
 function navigation(): string {
@@ -105,15 +112,14 @@ function navigation(): string {
 function emptyState(): string {
   return `<section class="hero-sheet" aria-labelledby="start-heading">
       <div class="hero-copy">
-        <p class="dimension">01 — establish source</p>
-        <h2 id="start-heading">Inspect before you import.</h2>
-        <p>Open a CSV or Excel export. We’ll reveal its parsing assumptions, propose a column contract, and keep every source value on your device.</p>
+        <p class="dimension">01 — choose a source file</p>
+        <h2 id="start-heading">Check a CSV before import.</h2>
+        <p>Choose a CSV or XLSX file. Set the field map and checks before another person imports it.</p>
         <div class="drop-zone" id="drop-zone">
           <input id="source-file" type="file" accept=".csv,.tsv,.txt,.xlsx" aria-describedby="file-help">
           <label class="primary-button" for="source-file">Choose a CSV or XLSX</label>
-          <span id="file-help">or drop it here · processed locally</span>
+          <span id="file-help">Or drop a file here. It stays on this device.</span>
         </div>
-        <button class="sample-button" id="sample-button" type="button">Try a safe sample</button>
         <p class="error-message" id="file-error" role="alert"></p>
       </div>
       <picture class="hero-art">
@@ -121,7 +127,7 @@ function emptyState(): string {
         <source srcset="/assets/contract-drafting-hero-768.454a62e7.webp 768w, /assets/contract-drafting-hero.b638ae3d.webp 1280w" sizes="(max-width: 900px) 100vw, 55vw" type="image/webp">
         <img src="/assets/contract-drafting-hero.f693a142.jpg" width="1280" height="853" fetchpriority="high" alt="Technical illustration of messy data strips passing through a measuring jig and becoming a precise contract sheet.">
       </picture>
-      <div class="trust-line"><span>01 / Read locally</span><span>02 / Make rules explicit</span><span>03 / Hand off evidence</span></div>
+      <div class="trust-line"><span>01 / Choose a file</span><span>02 / Set field rules</span><span>03 / Export handoff files</span></div>
     </section>`;
 }
 
@@ -129,7 +135,7 @@ function sourcePanel(): string {
   const source = project.source!;
   const sampleRows = source.rows.slice(0, 5);
   return `<section class="panel" aria-labelledby="source-heading">
-    <div class="panel-heading"><div><p class="dimension">01 — source profile</p><h2 id="source-heading">Parsing assumptions</h2></div><button class="secondary-button" id="replace-file" type="button">Replace source</button></div>
+    <div class="panel-heading"><div><p class="dimension">01 — source profile</p><h2 id="source-heading">How this file is read</h2></div><button class="secondary-button" id="replace-file" type="button">Replace source</button></div>
     <div class="metrics">
       <div><span>Format</span><strong>${source.parse.format.toUpperCase()}</strong></div>
       <div><span>Rows</span><strong>${source.rows.length.toLocaleString()}</strong></div>
@@ -154,7 +160,7 @@ const transformOptions: TransformName[] = ["none", "trim", "lowercase", "upperca
 
 function mappingPanel(): string {
   return `<section class="panel" aria-labelledby="mapping-heading">
-    <div class="panel-heading"><div><p class="dimension">02 — mapping schedule</p><h2 id="mapping-heading">Define the receiving shape</h2><p>Rename targets, exclude columns, and choose a deterministic transform. Coercions are marked for review.</p></div></div>
+    <div class="panel-heading"><div><p class="dimension">02 — field map</p><h2 id="mapping-heading">Set the output fields</h2><p>Rename fields, exclude columns, and choose a conversion. Number, date, and yes/no conversions are marked for review.</p></div></div>
     <div class="mapping-list" role="list">${project.rules.map((rule, index) => mappingRow(rule, index)).join("")}</div>
     ${panelActions("Continue to validate", 2)}
   </section>`;
@@ -201,7 +207,7 @@ function handoffPanel(): string {
   const targetNames = included.map((rule) => rule.target.trim()).filter(Boolean);
   const mappingProblems = !included.length || included.some((rule) => !rule.target.trim()) || new Set(targetNames).size !== targetNames.length;
   return `<section class="panel" aria-labelledby="handoff-heading">
-    <div class="panel-heading"><div><p class="dimension">04 — issue for handoff</p><h2 id="handoff-heading">A portable agreement</h2><p>Export the machine-readable contract, cleaned review file, and evidence report together.</p></div><span class="approval-stamp ${result.issues.length ? "revision" : ""}">${result.issues.length ? "Review required" : "Ready to hand off"}</span></div>
+    <div class="panel-heading"><div><p class="dimension">04 — issue for handoff</p><h2 id="handoff-heading">Export handoff files</h2><p>Export the import plan, cleaned review file, and evidence report together.</p></div><span class="approval-stamp ${result.issues.length ? "revision" : ""}">${result.issues.length ? "Review required" : "Ready to hand off"}</span></div>
     <div class="project-fields"><label><span>Project / client name</span><input id="project-name" value="${esc(project.name)}"></label><label><span>Contract version</span><input id="contract-version" value="${esc(project.contractVersion)}" pattern="\d+\.\d+\.\d+"></label></div>
     <fieldset class="signoff"><legend>Review sign-off</legend><label><span>Prepared by</span><input id="prepared-by" value="${esc(project.approval?.preparedBy ?? "")}"></label><label><span>Reviewed by</span><input id="reviewed-by" value="${esc(project.approval?.reviewedBy ?? "")}"></label><label><span>Status</span><select id="approval-status"><option value="draft" ${project.approval?.status !== "approved" ? "selected" : ""}>Draft</option><option value="approved" ${project.approval?.status === "approved" ? "selected" : ""} ${result.issues.length ? "disabled" : ""}>Approved${result.issues.length ? " — resolve issues first" : ""}</option></select></label></fieldset>
     ${mappingProblems ? '<div class="notice danger"><strong>Mapping is not exportable</strong><span>Include at least one field, and give every included target a unique name. Return to Map to correct it.</span></div>' : ""}
@@ -216,24 +222,12 @@ function handoffPanel(): string {
       <article><span class="file-mark">!</span><h3>Error evidence</h3><p>Source row, target field, reason, and untouched original value.</p><button class="secondary-button export" data-export="errors" type="button" ${!result.issues.length ? "disabled" : ""}>Export issues CSV</button></article>
     </div>
     <div class="import-contract"><div><h3>Repeat this contract</h3><p>Open a contract JSON after choosing another compatible source file.</p></div><label class="secondary-button" for="contract-file">Import contract JSON</label><input class="sr-only" id="contract-file" type="file" accept="application/json,.json"></div>
-    <div class="privacy-callout"><strong>Your evidence package is yours.</strong><p>Nothing was uploaded. Send these artifacts through your approved client channel.</p></div>
+    <div class="privacy-callout"><strong>Your evidence package is yours.</strong><p>Send these artifacts through your approved client channel.</p></div>
   </section>`;
 }
 
 function panelActions(label: string, next: number): string {
   return `<div class="panel-actions"><span>${steps[step]} complete when the decisions above are correct.</span><button class="primary-button next-step" data-next="${next}" type="button">${label} <span aria-hidden="true">→</span></button></div>`;
-}
-
-function licenseDialog(): string {
-  return `<form method="dialog" class="dialog-shell"><button class="dialog-close" value="cancel" aria-label="Close license panel">×</button>
-    <p class="dimension">Reusable practice</p><h2>${license.unlocked ? "Pro is active" : "Unlock Pro once"}</h2>
-    <p>The free workbench always includes profiling, all safety rules, and every export. Pro adds a reusable multi-client project archive for a one-time <strong>$29</strong>.</p>
-    ${license.unlocked ? `<div class="notice success"><strong>License active on this device</strong><span>${esc(license.notice)}</span></div><div class="archive-tools"><button class="secondary-button" id="archive-project" type="button" ${project.source ? "" : "disabled"}>Archive current project</button>${archives.length ? `<ul>${archives.map((item) => `<li><button type="button" class="archive-item" data-archive="${esc(item.id)}"><strong>${esc(item.name)}</strong><span>${new Date(item.updatedAt).toLocaleDateString()}</span></button></li>`).join("")}</ul>` : '<p class="dialog-notice">No archived projects yet.</p>'}</div>` : `<a class="primary-button buy-link" href="${checkoutUrl}">Buy Pro securely · $29</a>`}
-    <label><span>Have a license? Paste it here</span><input id="license-input" type="text" autocomplete="off" spellcheck="false"></label>
-    <button class="secondary-button" id="restore-license" type="button">Verify license</button>
-    <p class="dialog-notice" id="license-notice" role="status">${esc(license.notice)}</p>
-    <small>Sociobot/Dodo is the merchant of record. Refunds are handled there and revoke the license automatically. <a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></small>
-  </form>`;
 }
 
 function render(): void {
@@ -336,13 +330,19 @@ function bindEvents(): void {
   zone?.addEventListener("dragover", (event) => { event.preventDefault(); zone.classList.add("is-dragging"); });
   zone?.addEventListener("dragleave", () => zone.classList.remove("is-dragging"));
   zone?.addEventListener("drop", (event) => { event.preventDefault(); zone.classList.remove("is-dragging"); if (event.dataTransfer?.files[0]) void readSource(event.dataTransfer.files[0]); });
-  document.querySelector("#sample-button")?.addEventListener("click", () => {
-    const sample = new File(["Customer ID,Email,Join date,Active,Balance\nC-001, ADA@EXAMPLE.COM ,31/01/2025,yes,\"1,200\"\nC-002,bad address,2025-02-04,no,58.40\nC-002,grace@example.com,05/02/2025,Y,unknown"], "migration-sample.csv", { type: "text/csv" });
-    void readSource(sample);
-  });
   document.querySelector("#replace-file")?.addEventListener("click", async () => {
     if (!confirm(`Replace “${project.source?.fileName}”? The current rules will be cleared.`)) return;
-    project.source = undefined; project.rules = []; step = 0; await clearProject(); render();
+    project.source = undefined; project.rules = []; step = 0; await clearProject("current", storageScope); render();
+  });
+  document.querySelector("#reset-demo")?.addEventListener("click", async () => {
+    await clearProject("current", "demo");
+    project = sampleProject(); step = 0; saveStatus = "Demo reset"; announcement = "Sample data reset."; render();
+  });
+  document.querySelector("#start-real")?.addEventListener("click", async (event) => {
+    if (!demoMode) return;
+    event.preventDefault();
+    await clearProject("current", "demo");
+    location.assign("/");
   });
   document.querySelectorAll<HTMLButtonElement>(".export").forEach((button) => button.addEventListener("click", () => exportArtifact(button.dataset.export ?? "")));
   document.querySelector("#project-name")?.addEventListener("change", (event) => { project.name = (event.target as HTMLInputElement).value.trim() || "Untitled migration"; scheduleSave(); });
@@ -369,49 +369,23 @@ function bindEvents(): void {
       scheduleSave(); announcement = "Contract imported and matched to the current source."; render();
     } catch { alert("That JSON is not a supported import contract. Export a v1 contract and try again."); }
   });
-  const dialog = document.querySelector<HTMLDialogElement>("#license-dialog");
-  document.querySelector("#license-button")?.addEventListener("click", () => dialog?.showModal());
-  document.querySelector("#restore-license")?.addEventListener("click", async () => {
-    const token = document.querySelector<HTMLInputElement>("#license-input")?.value.trim();
-    if (!token) return;
-    storeLicense(token);
-    const notice = document.querySelector<HTMLElement>("#license-notice");
-    if (notice) notice.textContent = "Verifying…";
-    license = await verifyLicense(token, true);
-    render();
-    document.querySelector<HTMLDialogElement>("#license-dialog")?.showModal();
-  });
-  document.querySelector("#archive-project")?.addEventListener("click", async () => {
-    const snapshot = structuredClone(project);
-    snapshot.id = `archive:${crypto.randomUUID()}`;
-    snapshot.updatedAt = new Date().toISOString();
-    await saveProject(snapshot);
-    archives = await listProjects();
-    announcement = "Project archived for reuse.";
-    render();
-    document.querySelector<HTMLDialogElement>("#license-dialog")?.showModal();
-  });
-  document.querySelectorAll<HTMLButtonElement>("[data-archive]").forEach((button) => button.addEventListener("click", async () => {
-    const archived = await loadProject(button.dataset.archive);
-    if (!archived) return;
-    project = structuredClone(archived);
-    project.id = "current";
-    step = 0;
-    scheduleSave();
-    announcement = `${project.name} opened from the archive.`;
-    render();
-  }));
   document.querySelector("#reload-app")?.addEventListener("click", () => location.reload());
 }
 
-window.addEventListener("online", () => { sessionStorage.removeItem(OFFLINE_KEY); const element = document.querySelector("#connection span:last-child"); if (element) element.textContent = "Local & online"; });
-window.addEventListener("offline", () => { sessionStorage.setItem(OFFLINE_KEY, "1"); const element = document.querySelector("#connection span:last-child"); if (element) element.textContent = "Offline—local tools ready"; });
+window.addEventListener("online", () => { sessionStorage.removeItem(OFFLINE_KEY); const element = document.querySelector("#connection span:last-child"); if (element) element.textContent = "Ready"; });
+window.addEventListener("offline", () => { sessionStorage.setItem(OFFLINE_KEY, "1"); const element = document.querySelector("#connection span:last-child"); if (element) element.textContent = "Offline"; });
 
 async function start(): Promise<void> {
-  try { project = await loadProject() ?? project; } catch { saveStatus = "Local storage unavailable"; }
-  try { archives = await listProjects(); } catch { /* optional archive */ }
+  if (demoMode) document.title = "Demo — CSV Import Contract";
+  if (!demoMode) {
+    try { project = await loadProject() ?? project; } catch { saveStatus = "Local storage unavailable"; }
+  }
   render();
-  if (license.token) { license = await verifyLicense(license.token); render(); }
+  if (demoMode) {
+    announcement = "Demo loaded with sample data.";
+    document.querySelector<HTMLElement>("h1")?.focus();
+    renderChromeStatus();
+  }
   if ("serviceWorker" in navigator) {
     let alreadyControlled = Boolean(navigator.serviceWorker.controller);
     navigator.serviceWorker.register("/sw.js").catch(() => { /* app remains usable */ });
