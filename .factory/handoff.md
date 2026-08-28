@@ -76,3 +76,30 @@ Live checks on 2026-08-28:
 
 None. All BLOCKING findings from `review-1.md` are addressed. The previous Pro
 offer is intentionally absent until a published Sociobot checkout exists.
+
+## Review 2 handoff — 2026-08-28
+
+An independent, read-only adversarial review was completed against the live
+site and repository commit `a748190`. Product code was not changed. The report
+is `.factory/review-2.md`.
+
+Fresh 390 × 844 and 1440 × 900 browser contexts checked the cold landing,
+one-click `/demo` flow, reset/start-real behavior, requests, console, links,
+metadata, 404, and route focus. A clean clone at
+`/tmp/csv-import-contract-review2` passed `npm ci`, `npm test` (6/6),
+`npm run build`, and `npm run test:e2e` (12/12). Each declared claim command
+also passed independently: `demo-isolation`, `local-only`, `offline-reload`,
+and `handoff-exports` (2/2 browser projects each). Live axe scans found zero
+serious/critical issues on root, demo, legal, and 404 pages.
+
+### Review outcome
+
+**FAIL.**
+
+- **BLOCKING R7 / F-2-1:** The 404 page lacks OG/Twitter/Apple metadata; legal
+  footers omit one required legal link; and static route navigation leaves
+  focus on `body` rather than the new page heading/main.
+- **F-2-2:** The root landing page does not plainly say it never executes a
+  production import.
+
+No deployment or product-code action was taken by this reviewer.
