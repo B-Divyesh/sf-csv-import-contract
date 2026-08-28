@@ -60,7 +60,17 @@ Mobile Lighthouse against the production preview: **Performance 100**,
 
 Static output is `dist/`, with `staticwebapp.config.json` providing the
 `/demo` rewrite, security headers, cache policy, and designed 404 response.
-Push the commits on `main` to trigger the configured static deployment.
+Deployment completed through `/opt/fleet/lib/deploy-static.sh` as Azure Static
+Web Apps deployment `da2b0832-19d3-4263-9c40-ecaa80f4d118`.
+
+Live checks on 2026-08-28:
+
+- `https://csv-import-contract.sociobot.in/` serves the new title and bundle;
+- `https://csv-import-contract.sociobot.in/demo` serves **Demo — CSV Import
+  Contract**;
+- a live 390 px `?demo=1` browser visit showed the sample banner and source
+  with no console errors; and
+- `/no-such-route` returns HTTP 404.
 
 ## Known gaps
 
