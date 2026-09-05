@@ -12,6 +12,7 @@ Try the isolated sample at
 - Exports a JSON import plan, cleaned CSV, handoff report, and issue CSV.
 - Keeps source files and working data in the browser.
 - Works offline after the first visit.
+- Creates handoff files. It does not import data into another system.
 
 The sample page uses a separate demo workspace. Reset demo restores the sample.
 Start for real removes the demo workspace before opening the normal workspace.

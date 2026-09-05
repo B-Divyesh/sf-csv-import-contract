@@ -75,7 +75,7 @@ function header(): string {
     <header class="site-header">
       <a class="brand" href="/" aria-label="CSV Import Contract home"><span class="brand-mark" aria-hidden="true">⌗</span><span>CSV Import Contract</span></a>
       <div class="header-actions">
-        <nav class="top-nav" aria-label="Site"><a href="/demo">Try sample</a><a href="/privacy/">Privacy</a></nav>
+        <nav class="top-nav" aria-label="Site"><a href="/demo/">Try sample</a><a href="/privacy/">Privacy</a></nav>
         <span class="connection" id="connection"><span aria-hidden="true">●</span> <span>${isOffline() ? "Offline" : "Ready"}</span></span>
       </div>
     </header>`;
@@ -92,7 +92,7 @@ function shell(content: string): string {
           <p class="eyebrow">CSV import plan for migration teams</p>
           <h1 tabindex="-1">Prepare a CSV import <em>contract</em></h1>
           <p class="lede">For migration teams who need another person to repeat a CSV import.</p>
-          ${demoMode ? "" : `<div class="first-actions"><a class="primary-button" href="/demo">Try it with sample data</a><span>See a filled contract, checks, and handoff files now.</span></div><ul class="fact-list"><li>Files stay on this device</li><li>Works offline after first visit</li><li>Core exports are free</li></ul>`}
+          ${demoMode ? "" : `<div class="first-actions"><a class="primary-button" href="/demo/">Try it with sample data</a><span>See a filled contract, checks, and handoff files now.</span></div><ul class="fact-list"><li>Files stay on this device</li><li>Works offline after first visit</li><li>Core exports are free</li></ul>`}
         </div>
         ${sourceReady ? `<div class="source-stamp"><span>Active source</span><strong>${esc(project.source?.fileName)}</strong><small>${project.source?.rows.length.toLocaleString()} data rows</small></div>` : ""}
       </section>
@@ -115,6 +115,7 @@ function emptyState(): string {
         <p class="dimension">01 — choose a source file</p>
         <h2 id="start-heading">Check a CSV before import.</h2>
         <p>Choose a CSV or XLSX file. Set the field map and checks before another person imports it.</p>
+        <p class="scope-boundary"><strong>Stops before production.</strong> It creates handoff files and does not import data into another system.</p>
         <div class="drop-zone" id="drop-zone">
           <input id="source-file" type="file" accept=".csv,.tsv,.txt,.xlsx" aria-describedby="file-help">
           <label class="primary-button" for="source-file">Choose a CSV or XLSX</label>
@@ -381,8 +382,11 @@ async function start(): Promise<void> {
     try { project = await loadProject() ?? project; } catch { saveStatus = "Local storage unavailable"; }
   }
   render();
-  if (demoMode) {
-    announcement = "Demo loaded with sample data.";
+  const cameFromThisSite = document.referrer
+    ? new URL(document.referrer).origin === location.origin
+    : false;
+  if (demoMode || cameFromThisSite) {
+    announcement = demoMode ? "Demo loaded with sample data." : "CSV import workspace loaded.";
     document.querySelector<HTMLElement>("h1")?.focus();
     renderChromeStatus();
   }

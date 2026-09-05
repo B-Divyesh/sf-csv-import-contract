@@ -26,5 +26,12 @@
     "where": "Landing facts, README",
     "test": "npm run test:e2e -- --grep @claim:handoff-exports",
     "sandbox": "Fresh /demo flow reaches handoff and downloads the JSON plan, cleaned CSV, report, and issue CSV."
+  },
+  {
+    "id": "no-production-import",
+    "claim": "The product creates handoff files and does not import data into another system.",
+    "where": "Landing page, README, terms",
+    "test": "npm run test:e2e -- --grep @claim:no-production-import",
+    "sandbox": "Complete the sample handoff, export cleaned data, verify the downloaded rows, and assert the final action makes no network request."
   }
 ]
