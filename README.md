@@ -33,6 +33,12 @@ npm run test:e2e
 at its root. Browser tests include the tagged claim checks, keyboard and mobile
 checks, Axe, offline reload, and privacy request checks.
 
+## Deploy
+
+Run `npm run build`, then publish the contents of `dist` as the site root.
+Keep `staticwebapp.config.json` with the output so routes and security headers
+are applied. The Param Factory handles the production deployment.
+
 ## Privacy and legal
 
 Read the [privacy policy](https://csv-import-contract.sociobot.in/privacy/) and

@@ -1,105 +1,146 @@
-# Repair handoff — CSV Import Contract
+# Repair 2 handoff — CSV Import Contract
 
-## Repair commit
+## Release identity
 
-`6e39e7182743a755190eded570dae9791e484671` — `fix: polish demo sandbox and release routes`
+- Implementation commit: `e6ff8a898a80e96416cbcf85990c6aa31b42d724`
+- Implementation message: `fix: complete route contract and import boundary`
+- Documentation commit: the commit containing this handoff; use
+  `git rev-parse HEAD` after checkout.
+- Live URL: <https://csv-import-contract.sociobot.in>
+- Deployment ID: `bd4735f0-ba54-484a-a69b-fb3d9b274a53`
+- Deployment date: 5 September 2026
+
+The production artifact was built from the clean implementation commit before
+the later handoff-only commit.
 
 ## What changed
 
-- Replaced the cold first screen with the plain job, named migration teams, a
-  visible **Try it with sample data** action, its result, and three tested facts.
-- Added direct `/demo` and `?demo=1` sample entry. Demo work uses the isolated
-  IndexedDB database `demo:csv-import-contract`; it never opens the real
-  database. The persistent banner has Reset demo and Start for real controls.
-- Added the claim contract, demo documentation, copy audit, and four tagged
-  browser claim tests. Removed the unavailable Pro purchase and license UI
-  rather than leaving a dead checkout promise.
-- Added real static routes, route-specific metadata, social preview art,
-  favicon, shared legal navigation, `/demo` sitemap entry, and a styled 404
-  response configured with HTTP 404 status.
-- Preserved the blueprint drafting-sheet identity and verified the 390 px
-  layout. Pinned Playwright to the supplied 1.58.2 browser revision.
+- Completed the 404 metadata with canonical, Open Graph, Twitter, favicon, and
+  Apple touch tags using the existing original social image.
+- Made every static route focus its `h1` after navigation and announce the page
+  through a polite live region. Returning from the demo also focuses the new
+  workspace heading.
+- Standardized legal, offline, and 404 footers with the product one-liner,
+  Privacy, Terms, Param Factory credit, and build ID.
+- Added the plain boundary: the product creates handoff files and does not
+  import data into another system.
+- Added `no-production-import` to the claims registry. Its browser test reaches
+  handoff, checks the downloaded CSV rows, and proves the action makes no
+  network request.
+- Expanded route tests to follow real links, check focus and live announcements,
+  inspect rendered metadata and footers, and run Axe on each route.
+- Kept the existing blueprint drafting-sheet identity. No new image or AI
+  feature was needed for this repair.
 
-## Verification evidence
+## Earlier finding disposition
 
-Fresh clone: `/tmp/csv-import-contract-clean` cloned from repair commit, then:
+| Finding | Current disposition |
+| --- | --- |
+| VALIDATION-001 impossible dates | Fixed earlier. Unit and browser regressions still pass for invalid and leap-year dates. |
+| SEC-001 response policy | Fixed earlier. Live CSP, permissions, referrer, frame, and content-type headers remain present. |
+| PERF-001 cache policy | Fixed earlier. Live hashed assets are immutable; the worker is no-store. |
+| DEPLOY-001 manifest MIME | Fixed earlier. Live manifest is `application/manifest+json`. |
+| R1 demo isolation | Fixed. `demo:csv-import-contract` remains separate and the isolation claim passes. |
+| R2 first read | Fixed. Job, migration-team audience, and sample action are visible without scrolling. |
+| R3 claims contract | Fixed. Five declared claim commands pass from a clean clone. |
+| R4 dead checkout | Fixed earlier by removing the unavailable paid offer. |
+| R5 designed 404 | Fixed. An unknown live URL returns the designed page with HTTP 404. |
+| R6 unlisted claims | Fixed. Current landing and README promises map to declared claims. |
+| R7 / F-2-1 route structure | Fixed. The 404 metadata, every footer, and static route focus now pass browser checks. |
+| R8 unclear copy | Fixed earlier and retained. |
+| F-2-2 no-import boundary | Fixed with landing copy and the new outcome-based claim. |
+
+## Clean-checkout verification
+
+Fresh clone at the implementation commit:
 
 ```sh
-npm ci                         # 191 packages, 0 vulnerabilities
-npm test                       # 6/6 Vitest passed
-npm run build                  # dist/index.html produced
-npm run test:e2e               # 12/12 Playwright tests passed (desktop + 390 px)
+npm ci
+npm test
+npm run build
+npm run test:e2e
 ```
 
-The browser suite includes Axe with zero serious or critical violations,
-keyboard skip-link/focus checks, legal routes, title/canonical checks, real
-404 status, console-error checks, mobile overflow checks, and the calendar
-regression.
+Results:
 
-Every declared claim command passed (two browser projects each):
+- `npm ci`: 190 packages installed; 0 vulnerabilities.
+- `npm test`: 6/6 Vitest tests passed.
+- `npm run build`: passed; `dist/index.html` exists.
+- `npm run test:e2e`: 14/14 Playwright tests passed across desktop and 390 px.
+- Axe: zero serious or critical findings on root, demo, Privacy, Terms, offline,
+  and 404 pages.
+- Bundle: 32,437 B app JS, 65,440 B lazy XLSX JS, 18,741 B CSS, and
+  27,111 B mobile hero AVIF.
+
+Each command in `.factory/claims.json` was also run separately from that clean
+clone. Every command passed in both browser projects:
 
 ```sh
 npm run test:e2e -- --grep @claim:demo-isolation
 npm run test:e2e -- --grep @claim:local-only
 npm run test:e2e -- --grep @claim:offline-reload
 npm run test:e2e -- --grep @claim:handoff-exports
+npm run test:e2e -- --grep @claim:no-production-import
 ```
 
-The offline claim uses `context.setOffline(true)` after service-worker control.
-The privacy claim records the full demo flow and accepts only same-origin
-requests. The export claim downloads the JSON contract, cleaned CSV, report,
-and issue CSV. The isolation claim saves normal work, changes and resets demo
-data, then proves the normal record is unchanged.
+## Live verification
 
-Mobile Lighthouse against the production preview: **Performance 100**,
-**Accessibility 100**, LCP **1.6 s**, CLS **0**. Initial app assets are
-11.38 KB gzip JS plus 4.71 KB gzip CSS; the responsive mobile hero AVIF is
-28 KB. Visual review was completed at 390 × 844 for landing and demo.
+Fresh 1440 × 900 and 390 × 844 browser contexts completed the same cold flow.
+Before scrolling, both showed:
 
-## Deployment
+- Job: **Prepare a CSV import contract**.
+- Audience: migration teams who need another person to repeat an import.
+- First action: **Try it with sample data**.
 
-Static output is `dist/`, with `staticwebapp.config.json` providing the
-`/demo` rewrite, security headers, cache policy, and designed 404 response.
-Deployment completed through `/opt/fleet/lib/deploy-static.sh` as Azure Static
-Web Apps deployment `da2b0832-19d3-4263-9c40-ecaa80f4d118`.
+On the phone, the action ended at 417 px in an 844 px viewport. The page had no
+horizontal overflow. Both contexts then:
 
-Live checks on 2026-08-28:
+- loaded `migration-sample.csv` with three realistic customer rows;
+- retained “Demo — sample data, nothing is saved” through the handoff step;
+- showed the populated cleaned preview;
+- reset to the original sample;
+- used Start for real and returned to an empty normal workspace; and
+- made requests only to `https://csv-import-contract.sociobot.in`.
 
-- `https://csv-import-contract.sociobot.in/` serves the new title and bundle;
-- `https://csv-import-contract.sociobot.in/demo` serves **Demo — CSV Import
-  Contract**;
-- a live 390 px `?demo=1` browser visit showed the sample banner and source
-  with no console errors; and
-- `/no-such-route` returns HTTP 404.
+Privacy navigation and the designed 404 focused their headings. The missing URL
+returned HTTP 404 and contained the complete metadata and footer. Root, demo,
+Privacy, and Terms produced no console or page errors. Chromium logs the expected
+failed-resource message only for the deliberate HTTP 404 navigation.
 
-## Known gaps
+Live responses were byte-identical to the implementation build for
+`index.html`, `404.html`, `route-focus.js`, and the hashed main JavaScript.
 
-None. All BLOCKING findings from `review-1.md` are addressed. The previous Pro
-offer is intentionally absent until a published Sociobot checkout exists.
+The live offline reload retained the demo banner and sample. Reduced-motion
+animation duration was `0.00001 s`. Live mobile Axe scans found zero serious or
+critical issues on all routes.
 
-## Review 2 handoff — 2026-08-28
+Mobile Lighthouse against the live URL:
 
-An independent, read-only adversarial review was completed against the live
-site and repository commit `a748190`. Product code was not changed. The report
-is `.factory/review-2.md`.
+- Performance: 100
+- Accessibility: 100
+- Best Practices: 100
+- SEO: 100
+- LCP: 0.95 s
+- TBT: 0 ms
+- CLS: 0
 
-Fresh 390 × 844 and 1440 × 900 browser contexts checked the cold landing,
-one-click `/demo` flow, reset/start-real behavior, requests, console, links,
-metadata, 404, and route focus. A clean clone at
-`/tmp/csv-import-contract-review2` passed `npm ci`, `npm test` (6/6),
-`npm run build`, and `npm run test:e2e` (12/12). Each declared claim command
-also passed independently: `demo-isolation`, `local-only`, `offline-reload`,
-and `handoff-exports` (2/2 browser projects each). Live axe scans found zero
-serious/critical issues on root, demo, legal, and 404 pages.
+The first Lighthouse invocation used an unsupported CLI path flag and failed
+before measurement. Re-running with the documented `CHROME_PATH` environment
+completed successfully and produced the scores above.
 
-### Review outcome
+## Deployment policy checks
 
-**FAIL.**
+- Manifest: `application/manifest+json`, no-cache.
+- Hashed JS: one-year immutable cache.
+- Service worker: no-cache, no-store, must-revalidate.
+- Live HTML and 404: CSP, Permissions-Policy, Referrer-Policy,
+  X-Content-Type-Options, and frame denial are present.
+- The deployed artifact is static and keeps workspace state in browser
+  IndexedDB. No shared database or backend is used.
 
-- **BLOCKING R7 / F-2-1:** The 404 page lacks OG/Twitter/Apple metadata; legal
-  footers omit one required legal link; and static route navigation leaves
-  focus on `body` rather than the new page heading/main.
-- **F-2-2:** The root landing page does not plainly say it never executes a
-  production import.
+## Known gap and next step
 
-No deployment or product-code action was taken by this reviewer.
+No review finding remains open. The researched one-time paid archive is not
+offered because a working Sociobot billing product and checkout are not
+available in this repository. Keep it absent until that external dependency is
+provisioned and can be covered by a live checkout claim.
