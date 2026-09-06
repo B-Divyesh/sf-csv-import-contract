@@ -237,18 +237,38 @@ function panelActions(label: string, next: number): string {
   return `<div class="panel-actions"><span>${steps[step]} complete when the decisions above are correct.</span><button class="primary-button next-step" data-next="${next}" type="button">${label} <span aria-hidden="true">→</span></button></div>`;
 }
 
+function selectorForFocusedControl(element: Element | null): string | undefined {
+  if (!(element instanceof HTMLElement)) return undefined;
+  if (element.id) return `#${CSS.escape(element.id)}`;
+  if (element.dataset.step) return `button[data-step="${CSS.escape(element.dataset.step)}"]`;
+  if (element.dataset.next) return `button[data-next="${CSS.escape(element.dataset.next)}"]`;
+  if (element.dataset.export) return `button[data-export="${CSS.escape(element.dataset.export)}"]`;
+  const row = element.closest<HTMLElement>("[data-index]");
+  if (row?.dataset.index && element.dataset.field) {
+    return `[data-index="${CSS.escape(row.dataset.index)}"] [data-field="${CSS.escape(element.dataset.field)}"]`;
+  }
+  return undefined;
+}
+
+function focusControl(id: string): void {
+  window.setTimeout(() => document.getElementById(id)?.focus({ preventScroll: true }), 0);
+}
+
 function render(focus?: RenderFocus): void {
+  const priorFocus = focus ? undefined : selectorForFocusedControl(document.activeElement);
   const panel = !project.source ? emptyState() : step === 0 ? sourcePanel() : step === 1 ? mappingPanel() : step === 2 ? validationPanel() : handoffPanel();
   app.innerHTML = shell(panel);
   bindEvents();
   renderChromeStatus();
-  if (focus) {
-    requestAnimationFrame(() => {
+  if (focus || priorFocus) {
+    window.setTimeout(() => {
       const target = focus === "panel-heading"
         ? document.querySelector<HTMLElement>("#workspace h2")
-        : document.querySelector<HTMLElement>(`#${focus}`);
+        : focus
+          ? document.querySelector<HTMLElement>(`#${focus}`)
+          : document.querySelector<HTMLElement>(priorFocus!);
       target?.focus({ preventScroll: true });
-    });
+    }, 0);
   }
 }
 
@@ -362,7 +382,7 @@ function bindEvents(): void {
   });
   document.querySelector("#reset-demo")?.addEventListener("click", async () => {
     await clearProject("current", "demo");
-    project = sampleProject(); step = 0; saveStatus = "Demo reset"; announcement = "Demo reset. Sample data restored."; render("demo-reset");
+    project = sampleProject(); step = 0; saveStatus = "Demo reset"; announcement = "Demo reset. Sample data restored."; render(); focusControl("reset-demo");
   });
   document.querySelector("#start-real")?.addEventListener("click", async (event) => {
     if (!demoMode) return;

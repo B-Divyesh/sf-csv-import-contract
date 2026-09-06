@@ -222,6 +222,7 @@ test("keeps keyboard focus and announces a workflow step or demo reset", async (
 
   await page.getByRole("button", { name: "Reset demo" }).focus();
   await page.keyboard.press("Enter");
+  await page.waitForTimeout(500);
   await expect(page.getByRole("button", { name: "Reset demo" })).toBeFocused();
   await expect(page.locator("#announcer")).toHaveText("Demo reset. Sample data restored.");
   await expect(page.getByText("migration-sample.csv", { exact: true })).toBeVisible();
