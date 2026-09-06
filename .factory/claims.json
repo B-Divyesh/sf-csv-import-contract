@@ -22,10 +22,24 @@
   },
   {
     "id": "handoff-exports",
-    "claim": "Core exports are free.",
-    "where": "Landing facts, README",
+    "claim": "Core handoff exports are free and contain the stated plan, cleaned data, report, and issue evidence.",
+    "where": "Landing facts, README, handoff export cards",
     "test": "npm run test:e2e -- --grep @claim:handoff-exports",
-    "sandbox": "Fresh /demo flow reaches handoff and downloads the JSON plan, cleaned CSV, report, and issue CSV."
+    "sandbox": "Fresh /demo flow reaches handoff, downloads every artifact, and parses the JSON, CSV, Markdown report, and issue evidence."
+  },
+  {
+    "id": "xlsx-input",
+    "claim": "Opens XLSX files in the browser.",
+    "where": "Landing file control, Terms",
+    "test": "npm run test:e2e -- --grep @claim:xlsx-input",
+    "sandbox": "Fresh /demo flow uploads a shipped one-sheet XLSX fixture and verifies its worksheet and profile."
+  },
+  {
+    "id": "contract-reuse",
+    "claim": "An exported contract can be applied to a compatible source file.",
+    "where": "Handoff contract import control",
+    "test": "npm run test:e2e -- --grep @claim:contract-reuse",
+    "sandbox": "Fresh /demo flow changes a mapping, exports the contract, replaces the source with compatible headers, imports the JSON, and verifies the mapping is restored."
   },
   {
     "id": "no-production-import",

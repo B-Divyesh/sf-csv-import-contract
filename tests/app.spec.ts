@@ -1,6 +1,23 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
+const xlsxFixture = Buffer.from("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", "base64");
+
+async function downloadText(download: import("@playwright/test").Download): Promise<string> {
+  const stream = await download.createReadStream();
+  expect(stream).toBeTruthy();
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream!) chunks.push(Buffer.from(chunk));
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+async function expectTouchTarget(locator: import("@playwright/test").Locator): Promise<void> {
+  const box = await locator.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.width).toBeGreaterThanOrEqual(44);
+  expect(box!.height).toBeGreaterThanOrEqual(44);
+}
+
 async function reachHandoff(page: import("@playwright/test").Page): Promise<void> {
   await page.getByRole("button", { name: /Continue to map/ }).click();
   await page.getByRole("button", { name: /Continue to validate/ }).click();
@@ -80,23 +97,94 @@ test("@claim:offline-reload reloads the sample without a network connection", as
   await expect(page.getByText("migration-sample.csv", { exact: true })).toBeVisible();
 });
 
-test("@claim:handoff-exports downloads every free handoff file", async ({ page }) => {
+test("@claim:handoff-exports downloads populated free handoff files", async ({ page }) => {
   await page.goto("/demo/");
   await reachHandoff(page);
-  const contract = page.waitForEvent("download");
+  const contractDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export contract" }).click();
-  await expect((await contract).suggestedFilename()).toMatch(/\.import-contract\.json$/);
-  const cleaned = page.waitForEvent("download");
+  const contract = await contractDownload;
+  expect(contract.suggestedFilename()).toMatch(/\.import-contract\.json$/);
+  const contractBody = JSON.parse(await downloadText(contract));
+  expect(contractBody.schema).toBe("https://csv-import-contract.sociobot.in/schema/v1");
+  expect(contractBody.source).toMatchObject({ fileName: "migration-sample.csv", rowCount: 3, columns: 5 });
+  expect(contractBody.columns).toHaveLength(5);
+  expect(contractBody.safety).toMatchObject({ preserveOriginalRowNumbers: true, deterministicTransforms: true });
+
+  const cleanedDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export cleaned CSV" }).click();
-  const cleanedDownload = await cleaned;
-  expect(cleanedDownload.suggestedFilename()).toMatch(/\.cleaned\.csv$/);
-  expect(await cleanedDownload.createReadStream()).toBeTruthy();
-  const report = page.waitForEvent("download");
+  const cleaned = await cleanedDownload;
+  expect(cleaned.suggestedFilename()).toMatch(/\.cleaned\.csv$/);
+  const cleanedBody = await downloadText(cleaned);
+  expect(cleanedBody).toContain("customer_id,email,join_date,active,balance");
+  expect(cleanedBody).toContain('C-001,ADA@EXAMPLE.COM,2025-01-31,yes,"1,200"');
+
+  const reportDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export report" }).click();
-  await expect((await report).suggestedFilename()).toMatch(/\.handoff\.md$/);
-  const issues = page.waitForEvent("download");
+  const report = await reportDownload;
+  expect(report.suggestedFilename()).toMatch(/\.handoff\.md$/);
+  const reportBody = await downloadText(report);
+  expect(reportBody).toContain("# Import handoff — Migration sample");
+  expect(reportBody).toContain("## Source profile");
+  expect(reportBody).toContain("## Validation result");
+  expect(reportBody).toContain("Original value: \"yes\"");
+
+  const issuesDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export issues CSV" }).click();
-  await expect((await issues).suggestedFilename()).toMatch(/\.issues\.csv$/);
+  const issues = await issuesDownload;
+  expect(issues.suggestedFilename()).toMatch(/\.issues\.csv$/);
+  const issuesBody = await downloadText(issues);
+  expect(issuesBody).toContain("source_row,source_column,target_field,code,message,original_value");
+  expect(issuesBody).toContain("2,Active,active,type,Expected boolean.,yes");
+  expect(issuesBody).toContain("4,Active,active,type,Expected boolean.,Y");
+});
+
+test("@claim:xlsx-input opens an XLSX worksheet in the demo workspace", async ({ page }) => {
+  await page.goto("/demo/");
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Replace source" }).click();
+  await page.locator("#source-file").setInputFiles({
+    name: "customers.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: xlsxFixture
+  });
+  await expect(page.getByText("customers.xlsx", { exact: true })).toBeVisible();
+  await expect(page.locator(".metrics")).toContainText("XLSX");
+  await expect(page.locator(".syntax-card")).toContainText("Customers");
+  await expect(page.getByRole("heading", { name: "How this file is read" })).toBeFocused();
+});
+
+test("@claim:contract-reuse applies an exported contract to a compatible source", async ({ page }) => {
+  await page.goto("/demo/");
+  await page.getByRole("button", { name: /Continue to map/ }).click();
+  const firstTarget = page.locator('[data-index="0"] input[data-field="target"]');
+  await firstTarget.fill("migration_customer_code");
+  await firstTarget.dispatchEvent("change");
+  await page.getByRole("button", { name: /Continue to validate/ }).click();
+  await page.getByRole("button", { name: /Review handoff/ }).click();
+
+  const contractDownload = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export contract" }).click();
+  const contractBody = await downloadText(await contractDownload);
+
+  await page.getByRole("button", { name: /Source/ }).click();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Replace source" }).click();
+  await page.locator("#source-file").setInputFiles({
+    name: "compatible-source.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from("Customer ID,Email,Join date,Active,Balance\nC-100,second@example.com,01/03/2025,yes,25")
+  });
+  await expect(page.getByText("compatible-source.csv", { exact: true })).toBeVisible();
+  await reachHandoff(page);
+  await page.locator("#contract-file").setInputFiles({
+    name: "migration.import-contract.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(contractBody)
+  });
+  await expect(page.locator("#announcer")).toHaveText("Contract imported and matched to the current source.");
+  await expect(page.getByRole("heading", { name: "Export handoff files" })).toBeFocused();
+  await page.getByRole("button", { name: /Map/ }).click();
+  await expect(page.locator('[data-index="0"] input[data-field="target"]')).toHaveValue("migration_customer_code");
 });
 
 test("@claim:no-production-import finishes with a local handoff instead of a remote import", async ({ page }) => {
@@ -117,6 +205,42 @@ test("@claim:no-production-import finishes with a local handoff instead of a rem
   expect(contents).toContain("customer_id,email,join_date,active,balance");
   expect(contents).toContain('C-001,ADA@EXAMPLE.COM,2025-01-31,yes,"1,200"');
   expect(finalRequests).toEqual([]);
+});
+
+test("keeps keyboard focus and announces a workflow step or demo reset", async ({ page }) => {
+  await page.goto("/demo/");
+
+  await page.getByRole("button", { name: /Continue to map/ }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { name: "Set the output fields" })).toBeFocused();
+  await expect(page.locator("#announcer")).toHaveText("Map step loaded.");
+
+  await page.getByRole("button", { name: /Continue to validate/ }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { name: "Set pass / fail rules" })).toBeFocused();
+  await expect(page.locator("#announcer")).toHaveText("Validate step loaded.");
+
+  await page.getByRole("button", { name: "Reset demo" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("button", { name: "Reset demo" })).toBeFocused();
+  await expect(page.locator("#announcer")).toHaveText("Demo reset. Sample data restored.");
+  await expect(page.getByText("migration-sample.csv", { exact: true })).toBeVisible();
+});
+
+test("provides 44 pixel touch targets for demo, home, footer, and legal links", async ({ page }) => {
+  await page.goto("/demo/");
+  await expectTouchTarget(page.getByRole("button", { name: "Reset demo" }));
+  await expectTouchTarget(page.getByRole("link", { name: "Start for real" }));
+  await expectTouchTarget(page.getByRole("link", { name: "CSV Import Contract home" }));
+
+  await page.goto("/");
+  await expectTouchTarget(page.locator("footer").getByRole("link", { name: "Privacy" }));
+  await expectTouchTarget(page.locator("footer").getByRole("link", { name: "Terms" }));
+
+  await page.goto("/privacy/");
+  await expectTouchTarget(page.locator("header > a"));
+  await expectTouchTarget(page.locator("footer").getByRole("link", { name: "Privacy" }));
+  await expectTouchTarget(page.locator("footer").getByRole("link", { name: "Terms" }));
 });
 
 test("has a clear first screen, working routes, accessible structure, and no console errors", async ({ page }) => {

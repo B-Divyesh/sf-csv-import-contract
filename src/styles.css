@@ -40,7 +40,7 @@ button { color: inherit; }
 .sr-only { position: absolute!important; width: 1px!important; height: 1px!important; padding: 0!important; margin: -1px!important; overflow: hidden!important; clip: rect(0,0,0,0)!important; white-space: nowrap!important; border: 0!important; }
 
 .site-header { height: 72px; padding: 0 max(24px, calc((100vw - 1240px)/2)); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--ink); background: rgba(243, 240, 231, .94); }
-.brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); font: 700 14px/1 var(--label); letter-spacing: .12em; text-decoration: none; text-transform: uppercase; }
+.brand { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; gap: 10px; color: var(--ink); font: 700 14px/1 var(--label); letter-spacing: .12em; text-decoration: none; text-transform: uppercase; }
 .brand-mark { display: grid; place-items: center; width: 36px; height: 36px; font: 26px/1 var(--mono); border: 1px solid var(--ink); }
 .header-actions { display: flex; align-items: center; gap: 24px; }
 .top-nav { display: flex; align-items: center; gap: 16px; font: 700 12px/1 var(--label); letter-spacing: .06em; text-transform: uppercase; }
@@ -50,7 +50,7 @@ button { color: inherit; }
 .demo-banner { width: min(1240px, calc(100% - 48px)); display: flex; align-items: center; gap: 16px; margin: 16px auto -44px; padding: 10px 14px; border: 1px solid var(--cyan-dark); color: var(--ink); background: #e8f4f3; font-size: 13px; }
 .demo-banner strong { font-family: var(--label); }
 .demo-banner span { flex: 1; color: var(--muted); }
-.demo-banner button, .demo-banner a { min-height: 38px; padding: 6px 10px; border: 1px solid var(--ink); color: var(--ink); background: var(--raised); font: 700 12px var(--label); text-decoration: none; cursor: pointer; }
+.demo-banner button, .demo-banner a { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 6px 10px; border: 1px solid var(--ink); color: var(--ink); background: var(--raised); font: 700 12px var(--label); text-decoration: none; cursor: pointer; }
 .text-button { min-height: 44px; padding: 4px 0; border: 0; border-bottom: 1px solid currentColor; color: var(--cyan-dark); background: transparent; cursor: pointer; }
 .sheet-number { position: absolute; top: 90px; right: max(24px, calc((100vw - 1240px)/2)); color: var(--muted); font: 700 11px/1 var(--label); letter-spacing: .16em; }
 
@@ -178,6 +178,7 @@ button:disabled { opacity: .48; cursor: not-allowed; box-shadow: none; }
 .privacy-callout p { margin: 4px 0 0; color: var(--muted); }
 
 footer { min-height: 120px; display: flex; justify-content: space-between; gap: 24px; padding: 32px max(24px, calc((100vw - 1240px)/2)) 64px; border-top: 1px solid var(--ink); color: var(--muted); background: rgba(243,240,231,.94); font-size: 12px; }
+footer a { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; }
 .save-strip { position: fixed; z-index: 10; left: 0; right: 0; bottom: 0; min-height: 32px; display: flex; justify-content: space-between; align-items: center; padding: 6px max(20px, calc((100vw - 1240px)/2)); color: var(--raised); background: var(--ink); font-size: 11px; }
 dialog { width: min(560px, calc(100% - 32px)); padding: 0; border: 1px solid var(--ink); color: var(--ink); background: var(--raised); box-shadow: 10px 10px 0 rgba(18,50,74,.25); }
 dialog::backdrop { background: rgba(18,50,74,.55); }

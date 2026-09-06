@@ -24,6 +24,8 @@ let saveTimer = 0;
 let announcement = "";
 let updateAvailable = false;
 
+type RenderFocus = "panel-heading" | "demo-reset" | "approval-status";
+
 const steps = ["Source", "Map", "Validate", "Handoff"];
 const OFFLINE_KEY = "csv-contract:offline";
 const isOffline = (): boolean => !navigator.onLine || sessionStorage.getItem(OFFLINE_KEY) === "1";
@@ -55,18 +57,22 @@ function scheduleSave(): void {
     } catch {
       saveStatus = "Could not save locally";
     }
-    renderChromeStatus();
+    renderChromeStatus(false);
   }, 350);
-  renderChromeStatus();
+  renderChromeStatus(false);
 }
 
-function renderChromeStatus(): void {
+function renderChromeStatus(includeAnnouncement = true): void {
   const status = document.querySelector<HTMLElement>("#save-status");
   if (status) status.textContent = saveStatus;
   const live = document.querySelector<HTMLElement>("#announcer");
-  if (live && announcement) {
-    live.textContent = announcement;
+  if (includeAnnouncement && live && announcement) {
+    const message = announcement;
     announcement = "";
+    requestAnimationFrame(() => {
+      const currentLive = document.querySelector<HTMLElement>("#announcer");
+      if (currentLive) currentLive.textContent = message;
+    });
   }
 }
 
@@ -113,7 +119,7 @@ function emptyState(): string {
   return `<section class="hero-sheet" aria-labelledby="start-heading">
       <div class="hero-copy">
         <p class="dimension">01 — choose a source file</p>
-        <h2 id="start-heading">Check a CSV before import.</h2>
+        <h2 id="start-heading" tabindex="-1">Check a CSV before import.</h2>
         <p>Choose a CSV or XLSX file. Set the field map and checks before another person imports it.</p>
         <p class="scope-boundary"><strong>Stops before production.</strong> It creates handoff files and does not import data into another system.</p>
         <div class="drop-zone" id="drop-zone">
@@ -136,7 +142,7 @@ function sourcePanel(): string {
   const source = project.source!;
   const sampleRows = source.rows.slice(0, 5);
   return `<section class="panel" aria-labelledby="source-heading">
-    <div class="panel-heading"><div><p class="dimension">01 — source profile</p><h2 id="source-heading">How this file is read</h2></div><button class="secondary-button" id="replace-file" type="button">Replace source</button></div>
+    <div class="panel-heading"><div><p class="dimension">01 — source profile</p><h2 id="source-heading" tabindex="-1">How this file is read</h2></div><button class="secondary-button" id="replace-file" type="button">Replace source</button></div>
     <div class="metrics">
       <div><span>Format</span><strong>${source.parse.format.toUpperCase()}</strong></div>
       <div><span>Rows</span><strong>${source.rows.length.toLocaleString()}</strong></div>
@@ -161,7 +167,7 @@ const transformOptions: TransformName[] = ["none", "trim", "lowercase", "upperca
 
 function mappingPanel(): string {
   return `<section class="panel" aria-labelledby="mapping-heading">
-    <div class="panel-heading"><div><p class="dimension">02 — field map</p><h2 id="mapping-heading">Set the output fields</h2><p>Rename fields, exclude columns, and choose a conversion. Number, date, and yes/no conversions are marked for review.</p></div></div>
+    <div class="panel-heading"><div><p class="dimension">02 — field map</p><h2 id="mapping-heading" tabindex="-1">Set the output fields</h2><p>Rename fields, exclude columns, and choose a conversion. Number, date, and yes/no conversions are marked for review.</p></div></div>
     <div class="mapping-list" role="list">${project.rules.map((rule, index) => mappingRow(rule, index)).join("")}</div>
     ${panelActions("Continue to validate", 2)}
   </section>`;
@@ -182,7 +188,7 @@ function validationPanel(): string {
   const active = project.rules.filter((rule) => rule.include);
   const result = cleanAndValidate(project.source!, project.rules);
   return `<section class="panel" aria-labelledby="validation-heading">
-    <div class="panel-heading"><div><p class="dimension">03 — acceptance schedule</p><h2 id="validation-heading">Set pass / fail rules</h2><p>Rules run against the full file. Every issue points back to its original row and value.</p></div><div class="issue-count ${result.issues.length ? "has-issues" : ""}"><strong>${result.issues.length}</strong><span>issues</span></div></div>
+    <div class="panel-heading"><div><p class="dimension">03 — acceptance schedule</p><h2 id="validation-heading" tabindex="-1">Set pass / fail rules</h2><p>Rules run against the full file. Every issue points back to its original row and value.</p></div><div class="issue-count ${result.issues.length ? "has-issues" : ""}"><strong>${result.issues.length}</strong><span>issues</span></div></div>
     <div class="rule-grid">${project.rules.map((rule, index) => rule.include ? `<fieldset class="rule-card" data-index="${index}"><legend>${esc(rule.target)}</legend>
       <p>from <code>${esc(rule.source)}</code> · ${esc(rule.type)}</p>
       <div class="check-row"><label><input type="checkbox" data-field="required" ${rule.required ? "checked" : ""}> Required</label><label><input type="checkbox" data-field="unique" ${rule.unique ? "checked" : ""}> Unique</label></div>
@@ -208,7 +214,7 @@ function handoffPanel(): string {
   const targetNames = included.map((rule) => rule.target.trim()).filter(Boolean);
   const mappingProblems = !included.length || included.some((rule) => !rule.target.trim()) || new Set(targetNames).size !== targetNames.length;
   return `<section class="panel" aria-labelledby="handoff-heading">
-    <div class="panel-heading"><div><p class="dimension">04 — issue for handoff</p><h2 id="handoff-heading">Export handoff files</h2><p>Export the import plan, cleaned review file, and evidence report together.</p></div><span class="approval-stamp ${result.issues.length ? "revision" : ""}">${result.issues.length ? "Review required" : "Ready to hand off"}</span></div>
+    <div class="panel-heading"><div><p class="dimension">04 — issue for handoff</p><h2 id="handoff-heading" tabindex="-1">Export handoff files</h2><p>Export the import plan, cleaned review file, and evidence report together.</p></div><span class="approval-stamp ${result.issues.length ? "revision" : ""}">${result.issues.length ? "Review required" : "Ready to hand off"}</span></div>
     <div class="project-fields"><label><span>Project / client name</span><input id="project-name" value="${esc(project.name)}"></label><label><span>Contract version</span><input id="contract-version" value="${esc(project.contractVersion)}" pattern="\d+\.\d+\.\d+"></label></div>
     <fieldset class="signoff"><legend>Review sign-off</legend><label><span>Prepared by</span><input id="prepared-by" value="${esc(project.approval?.preparedBy ?? "")}"></label><label><span>Reviewed by</span><input id="reviewed-by" value="${esc(project.approval?.reviewedBy ?? "")}"></label><label><span>Status</span><select id="approval-status"><option value="draft" ${project.approval?.status !== "approved" ? "selected" : ""}>Draft</option><option value="approved" ${project.approval?.status === "approved" ? "selected" : ""} ${result.issues.length ? "disabled" : ""}>Approved${result.issues.length ? " — resolve issues first" : ""}</option></select></label></fieldset>
     ${mappingProblems ? '<div class="notice danger"><strong>Mapping is not exportable</strong><span>Include at least one field, and give every included target a unique name. Return to Map to correct it.</span></div>' : ""}
@@ -231,10 +237,27 @@ function panelActions(label: string, next: number): string {
   return `<div class="panel-actions"><span>${steps[step]} complete when the decisions above are correct.</span><button class="primary-button next-step" data-next="${next}" type="button">${label} <span aria-hidden="true">→</span></button></div>`;
 }
 
-function render(): void {
+function render(focus?: RenderFocus): void {
   const panel = !project.source ? emptyState() : step === 0 ? sourcePanel() : step === 1 ? mappingPanel() : step === 2 ? validationPanel() : handoffPanel();
   app.innerHTML = shell(panel);
   bindEvents();
+  renderChromeStatus();
+  if (focus) {
+    requestAnimationFrame(() => {
+      const target = focus === "panel-heading"
+        ? document.querySelector<HTMLElement>("#workspace h2")
+        : document.querySelector<HTMLElement>(`#${focus}`);
+      target?.focus({ preventScroll: true });
+    });
+  }
+}
+
+function moveToStep(next: number): void {
+  step = next;
+  announcement = `${steps[next]} step loaded.`;
+  render("panel-heading");
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.querySelector("#workspace")?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
 }
 
 async function readSource(file: File): Promise<void> {
@@ -269,7 +292,7 @@ async function readSource(file: File): Promise<void> {
     step = 0;
     announcement = `${file.name} profiled. ${source.rows.length} rows and ${source.headers.length} columns found.`;
     scheduleSave();
-    render();
+    render("panel-heading");
   } catch (caught) {
     const message = caught instanceof Error ? caught.message : "The file could not be read.";
     if (error) error.textContent = `${message} Choose a CSV, TSV, or XLSX with headings in its first row.`;
@@ -322,8 +345,8 @@ function exportArtifact(kind: string): void {
 }
 
 function bindEvents(): void {
-  document.querySelectorAll<HTMLButtonElement>("[data-step]").forEach((button) => button.addEventListener("click", () => { step = Number(button.dataset.step); render(); document.querySelector("#workspace")?.scrollIntoView(); }));
-  document.querySelectorAll<HTMLButtonElement>("[data-next]").forEach((button) => button.addEventListener("click", () => { step = Number(button.dataset.next); render(); document.querySelector("#workspace")?.scrollIntoView({ behavior: "smooth" }); }));
+  document.querySelectorAll<HTMLButtonElement>("[data-step]").forEach((button) => button.addEventListener("click", () => moveToStep(Number(button.dataset.step))));
+  document.querySelectorAll<HTMLButtonElement>("[data-next]").forEach((button) => button.addEventListener("click", () => moveToStep(Number(button.dataset.next))));
   document.querySelectorAll<HTMLInputElement | HTMLSelectElement>("[data-field]").forEach((input) => input.addEventListener("change", () => { updateRule(input); if (step === 2 || input.dataset.field === "transform") render(); }));
   const file = document.querySelector<HTMLInputElement>("#source-file");
   file?.addEventListener("change", () => { if (file.files?.[0] && !busy) void readSource(file.files[0]); });
@@ -333,11 +356,13 @@ function bindEvents(): void {
   zone?.addEventListener("drop", (event) => { event.preventDefault(); zone.classList.remove("is-dragging"); if (event.dataTransfer?.files[0]) void readSource(event.dataTransfer.files[0]); });
   document.querySelector("#replace-file")?.addEventListener("click", async () => {
     if (!confirm(`Replace “${project.source?.fileName}”? The current rules will be cleared.`)) return;
-    project.source = undefined; project.rules = []; step = 0; await clearProject("current", storageScope); render();
+    project.source = undefined; project.rules = []; step = 0; await clearProject("current", storageScope);
+    announcement = "Source removed. Choose a CSV or XLSX file.";
+    render("panel-heading");
   });
   document.querySelector("#reset-demo")?.addEventListener("click", async () => {
     await clearProject("current", "demo");
-    project = sampleProject(); step = 0; saveStatus = "Demo reset"; announcement = "Sample data reset."; render();
+    project = sampleProject(); step = 0; saveStatus = "Demo reset"; announcement = "Demo reset. Sample data restored."; render("demo-reset");
   });
   document.querySelector("#start-real")?.addEventListener("click", async (event) => {
     if (!demoMode) return;
@@ -354,7 +379,13 @@ function bindEvents(): void {
   });
   document.querySelector("#prepared-by")?.addEventListener("change", (event) => { project.approval = { ...(project.approval ?? { preparedBy: "", reviewedBy: "", status: "draft" }), preparedBy: (event.target as HTMLInputElement).value.trim() }; scheduleSave(); });
   document.querySelector("#reviewed-by")?.addEventListener("change", (event) => { project.approval = { ...(project.approval ?? { preparedBy: "", reviewedBy: "", status: "draft" }), reviewedBy: (event.target as HTMLInputElement).value.trim() }; scheduleSave(); });
-  document.querySelector("#approval-status")?.addEventListener("change", (event) => { project.approval = { ...(project.approval ?? { preparedBy: "", reviewedBy: "", status: "draft" }), status: (event.target as HTMLSelectElement).value as "draft" | "approved" }; scheduleSave(); render(); });
+  document.querySelector("#approval-status")?.addEventListener("change", (event) => {
+    const status = (event.target as HTMLSelectElement).value as "draft" | "approved";
+    project.approval = { ...(project.approval ?? { preparedBy: "", reviewedBy: "", status: "draft" }), status };
+    scheduleSave();
+    announcement = `Approval status changed to ${status}.`;
+    render("approval-status");
+  });
   const contractFile = document.querySelector<HTMLInputElement>("#contract-file");
   contractFile?.addEventListener("change", async () => {
     const file = contractFile.files?.[0];
@@ -367,7 +398,7 @@ function bindEvents(): void {
       project.contractVersion = contract.version ?? project.contractVersion;
       project.name = contract.project ?? project.name;
       project.approval = contract.approval ?? project.approval;
-      scheduleSave(); announcement = "Contract imported and matched to the current source."; render();
+      scheduleSave(); announcement = "Contract imported and matched to the current source."; render("panel-heading");
     } catch { alert("That JSON is not a supported import contract. Export a v1 contract and try again."); }
   });
   document.querySelector("#reload-app")?.addEventListener("click", () => location.reload());

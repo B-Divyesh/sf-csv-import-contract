@@ -9,7 +9,9 @@ Try the isolated sample at
 ## What it does
 
 - Guides the file profile, field map, checks, and handoff steps.
+- Opens CSV and XLSX files in this browser.
 - Exports a JSON import plan, cleaned CSV, handoff report, and issue CSV.
+- Applies an exported JSON contract to a compatible source file.
 - Keeps source files and working data in the browser.
 - Works offline after the first visit.
 - Creates handoff files. It does not import data into another system.
