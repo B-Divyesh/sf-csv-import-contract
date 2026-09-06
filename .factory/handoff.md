@@ -1,61 +1,98 @@
-# Verification 3 handoff — CSV Import Contract
+# Repair 3 handoff — CSV Import Contract
 
 ## Result
 
-**FAIL — 3 findings and 3 untested public claims remain.**
-
-See [verification-3.md](verification-3.md) for the full independent evidence.
+**PASS — the three verification-3 findings and three claim-coverage gaps are repaired.**
 
 ## Release identity
 
-- Implementation reviewed: `e6ff8a898a80e96416cbcf85990c6aa31b42d724`
-- Documentation reviewed: `76b97dffe849bc5354b94b8dab3b265412f4db6b`
+- Implementation: `643ff684a5fb8bc865b64632fa6ad9fbd51f8efb`
+- Prior failed implementation: `e6ff8a898a80e96416cbcf85990c6aa31b42d724`
 - Live URL: <https://csv-import-contract.sociobot.in>
-- Verified: 5 September 2026 UTC
+- Final app asset: `assets/main-DTAbd6lG.js`
+- Verified: 6 September 2026 UTC
 
-The live root HTML, hashed app JS and CSS, service worker, manifest, 404 page,
-and route-focus script are byte-identical to the clean candidate build.
+The live root HTML, app JavaScript, app CSS, service worker, and manifest are
+byte-identical to the final local `dist/` build. The static deployment used the
+product's confirmed production Static Web App and retained its existing
+configuration.
 
-## What was verified
+## What changed
 
-- Clean install, 6/6 unit tests, production build, and 14/14 browser tests.
-- All five declared claim commands separately; every command passed in both
-  desktop and mobile projects.
-- Fresh live phone and desktop first reads, the complete sample workflow, four
-  populated exports, persistent demo label, reset, and real-work isolation.
-- CSV, TSV recovery, XLSX, invalid calendar dates, contract reuse, persistence,
-  keyboard flow, reduced motion, offline reload, and update notice.
-- Root, Demo, Privacy, Terms, offline, metadata, links, security headers,
-  caching, designed HTTP 404, console logs, and network requests.
-- Independent Axe scans and mobile Lighthouse. Lighthouse scored 100 in all
-  four categories, with 945 ms LCP, 0 ms TBT, and 0 CLS.
+- Added `xlsx-input` and `contract-reuse` claims. Their browser tests load a
+  real one-sheet XLSX fixture and export then import a changed contract into a
+  compatible second source.
+- Strengthened `handoff-exports` to parse the downloaded contract JSON and
+  inspect cleaned CSV, Markdown report, and issue-CSV evidence.
+- After a step change, the new step heading receives focus and the polite
+  announcer states the new step. Reset demo returns focus to Reset demo and
+  announces that the sample was restored. Later rerenders preserve a focused
+  control when possible.
+- Raised demo, home, footer, and legal navigation targets to at least 44 × 44
+  CSS pixels. Browser checks measure the rendered boxes rather than CSS text.
 
-## Findings to fix
+## Verification
 
-1. Add complete tagged claim coverage for XLSX input, repeat-contract import,
-   and the contents of the JSON, Markdown, and issue-CSV exports.
-2. Preserve or deliberately move focus and announce new state after workflow
-   step changes and Reset demo.
-3. Increase the live phone hit areas for demo, home, footer, and legal-page
-   links to at least 44 × 44 CSS px.
+A detached clean worktree at the implementation SHA completed:
 
-## Commands
+- `npm ci` — 190 packages; audit reported 0 vulnerabilities.
+- `npm test` — 6/6 passed.
+- `npm run build` — passed; `dist/index.html` produced.
+- `npm run test:e2e` — 22/22 passed across desktop and 390 px phone projects.
+- `npm audit --omit=dev` — 0 vulnerabilities.
+- Every declared claim command below passed separately in both projects.
 
 ```sh
-npm ci
-npm test
-npm run build
-npm run test:e2e
 npm run test:e2e -- --grep @claim:demo-isolation
 npm run test:e2e -- --grep @claim:local-only
 npm run test:e2e -- --grep @claim:offline-reload
 npm run test:e2e -- --grep @claim:handoff-exports
+npm run test:e2e -- --grep @claim:xlsx-input
+npm run test:e2e -- --grep @claim:contract-reuse
 npm run test:e2e -- --grep @claim:no-production-import
 ```
 
+Playwright Axe integration found no serious or critical issues on root, demo,
+privacy, terms, offline, and 404 pages. It also checks route focus, titles,
+one h1/main, offline reload, and no horizontal phone overflow. A local
+service-worker controller-change exercise displayed “An app update is ready.”
+Reduced motion made workspace animation duration `1e-05s`.
+
+## Live checks
+
+Fresh 1440 × 900 and 390 × 844 contexts both showed the job “Prepare a CSV
+import contract,” the migration-team audience, and “Try it with sample data”
+before scrolling. The phone action ended at 417 px of an 844 px viewport.
+
+The one-click sample showed `migration-sample.csv`, the persistent demo label,
+and a populated cleaned preview. Reset retained focus on Reset demo and
+announced “Demo reset. Sample data restored.” A separately saved
+`real-work.csv` remained after entering, resetting, and leaving demo mode.
+The live phone targets measured 44 px or larger; there were no console errors.
+
+An empty CSV gave the actionable header-row error. A subsequent TSV recovery
+showed a Tab delimiter. Free-flow request capture found only product-origin
+requests. Root, Demo, Privacy, Terms, offline, robots, and sitemap returned
+200; an unknown route returned the designed HTTP 404.
+
+Live headers retain CSP, frame denial, feature policy, referrer policy, and
+`nosniff`. Hashed assets are immutable, the manifest is
+`application/manifest+json`, and `sw.js` is not cached.
+
+## Earlier finding disposition
+
+| Finding | Current disposition |
+| --- | --- |
+| VALIDATION-001 | Fixed previously; strict calendar tests remain green. |
+| SEC-001, PERF-001, DEPLOY-001 | Fixed previously; confirmed on the final live headers. |
+| R1–R6 | Demo isolation, first read, claims, paid-link removal, 404, and plain copy remain fixed. |
+| R7 / F-2-1 and F-2-2 | Route structure/focus and the no-production-import boundary remain fixed. |
+| CLAIM-3-001 | Fixed with three outcome-level claim checks above. |
+| A11Y-3-001 | Fixed with post-render focus and live announcements, including late rerenders. |
+| A11Y-3-002 | Fixed with measured 44 px live controls. |
+
 ## Known external dependency
 
-The paid archive is not offered because no Sociobot billing product is
-provisioned. Keep it absent until checkout and license behavior can be tested.
-This does not change the FAIL verdict, which is caused by the three findings
-above.
+No Sociobot billing product is registered for the optional one-time paid
+archive. It is not advertised or simulated. The free local-first contract,
+exports, and safety behavior remain available.
